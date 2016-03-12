@@ -87,7 +87,7 @@ name{Daala Authors
 \backslash
 thanks{Thanks to someone}}
 \backslash
-address{Mozilla Corporation, Xiph.Org}
+address{Mozilla Corporation, Xiph.Org Foundation}
 \end_layout
 
 \end_inset
@@ -113,7 +113,7 @@ red techniques used in most current video codecs.
 \end_layout
 
 \begin_layout Standard
-Rather than describe in details all of the coding techniques used in Daala,
+Rather than describe in detail all of the coding techniques used in Daala,
  this paper provides references to previously published documents describing
  them.
 \end_layout
@@ -123,8 +123,8 @@ Techniques
 \end_layout
 
 \begin_layout Standard
-The following describes some of the techniques used by Daala that are different
- from other picture and video codecs.
+The following techniques used by Daala are different from other picture
+ and video codecs.
 \end_layout
 
 \begin_layout Subsection*
