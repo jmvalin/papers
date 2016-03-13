@@ -110,6 +110,7 @@ Introduction
 \begin_layout Standard
 Daala is a royalty-free video codec designed to avoid traditional patent-encumbe
 red techniques used in most current video codecs.
+ In this paper, we propose it for still picture coding.
 \end_layout
 
 \begin_layout Standard
