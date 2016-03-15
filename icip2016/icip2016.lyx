@@ -97,11 +97,11 @@ maketitle
 \end_layout
 
 \begin_layout Abstract
-Daala is a new royalty-free video codec that is based on several new coding
- techniques.
- We explore he application of its keyframe format for picture coding purposes
- and show how it has improved recently.
- We believe the technology used in Daala could be used to create an excellent,
+Daala is a new royalty-free video codec that is based on several new perceptuall
+y-driven coding techniques.
+ We explore the application of its keyframe format for still picture coding
+ purposes and show how it has improved over the past year.
+ We believe the technology used in Daala could be the basis of an excellent,
  royalty-free image format.
 \end_layout
 
@@ -234,7 +234,7 @@ key "valin2015spie"
 
  technique.
  PVQ makes it possible to take into account masking effects with no extra
- signalling.
+ signaling.
  
 \end_layout
 
