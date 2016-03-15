@@ -8,6 +8,11 @@
 \usepackage[pdfpagemode=UseNone,pdfstartview=FitH,pdfview=FitH,colorlinks=true,
  pdftitle=Daala:\ A\ Perceptually-Driven\ Still\ Picture\ Codec,
  pdfauthor=Xiph.Org]{hyperref}
+
+%\def\@name{ \emph{Jean-Marc Valin, Nathan E. Egge, Thomas Daede, Timothy B. Terriberry},  \\ \emph{Christopher Montgomery}\vspace{0.3cm}}
+\name{Jean-Marc Valin, Nathan E. Egge, Thomas Daede, Timothy B. Terriberry, Christopher Montgomery}
+\address{Mozilla Corporation, Xiph.Org Foundation}
+\title{Daala: A Perceptually-Driven Still Picture Codec}
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
@@ -26,7 +31,7 @@
 \font_sf_scale 100
 \font_tt_scale 100
 \graphics default
-\default_output_format default
+\default_output_format pdf2
 \output_sync 0
 \bibtex_command default
 \index_command default
@@ -83,20 +88,12 @@ status open
 
 
 \backslash
-name{Daala Authors
-\backslash
-thanks{Thanks to someone}}
-\backslash
-address{Mozilla Corporation, Xiph.Org Foundation}
+maketitle
 \end_layout
 
 \end_inset
 
 
-\end_layout
-
-\begin_layout Title
-Daala: A Perceptually-Driven Still Picture Codec
 \end_layout
 
 \begin_layout Abstract
@@ -110,13 +107,27 @@ Introduction
 \begin_layout Standard
 Daala is a royalty-free video codec designed to avoid traditional patent-encumbe
 red techniques used in most current video codecs.
- In this paper, we propose it for still picture coding.
+ In this paper, we propose to use Daala's keyframe format for still picture
+ coding.
 \end_layout
 
 \begin_layout Standard
 Rather than describe in detail all of the coding techniques used in Daala,
  this paper provides references to previously published documents describing
  them.
+ We then present the results obtained and compare them to previously reported
+ Daala results
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "EggePCS"
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Section
@@ -124,8 +135,9 @@ Techniques
 \end_layout
 
 \begin_layout Standard
-The following techniques used by Daala are different from other picture
- and video codecs.
+One of the goal of the Daala codec is to use explore techniques that are
+ very different from those typically used in most picture and video codecs.
+ These techniques are listed below.
 \end_layout
 
 \begin_layout Subsection*
@@ -267,8 +279,193 @@ key "ValinDeringing,DaedeDCC"
 Results
 \end_layout
 
+\begin_layout Standard
+In June 2015, Daala was compared to other still picture codecs
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "EggePCS"
+
+\end_inset
+
+.
+ Since then many improvements were made to the bitstream to improve its
+ quality.
+ These include reduced overlap in the lapped transform, finer quantization
+ of chroma
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+This results in a significant improvement in visual quality, but is obviously
+ a regression in luma-only metrics.
+\end_layout
+
+\end_inset
+
+, encoder search improvements, as well as a new deringing filter.
+ 
+\end_layout
+
+\begin_layout Standard
+Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Compressing-the-bike-image"
+
+\end_inset
+
+ shows the improvement on the picture that was the most problematic for
+ Daala in
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "EggePCS"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide true
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename bike_crop_pcs.png
+	width 40text%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+hspace{0.4cm}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename bike_crop_icip.png
+	width 40text%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Compressing the 
+\begin_inset Quotes eld
+\end_inset
+
+bike
+\begin_inset Quotes erd
+\end_inset
+
+ image at 0.25 bit/pixel.
+ Left: Previous results presented in
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "EggePCS"
+
+\end_inset
+
+.
+ Right: current result.
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Compressing-the-bike-image"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
-Conclusion
+Future Work
+\end_layout
+
+\begin_layout Standard
+The Daala bit-stream has not been frozen yet, so it is still being improved.
+ Among the recent features not demonstrated here are support for image bit
+ depths up to 12 bits, as well as a special coding
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "valinL1TW"
+
+\end_inset
+
+ tool for non-photographic computer-generated images that are currently
+ more appropriately coded with PNG rather than JPEG.
+ However, some features such as metadata support and lossless RGB are still
+ missing.
 \end_layout
 
 \begin_layout Standard
