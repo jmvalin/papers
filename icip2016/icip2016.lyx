@@ -97,7 +97,12 @@ maketitle
 \end_layout
 
 \begin_layout Abstract
-This abstract is too abstract for abstracting away this paper.
+Daala is a new royalty-free video codec that is based on several new coding
+ techniques.
+ We explore he application of its keyframe format for picture coding purposes
+ and show how it has improved recently.
+ We believe the technology used in Daala could be used to create an excellent,
+ royalty-free image format.
 \end_layout
 
 \begin_layout Section
