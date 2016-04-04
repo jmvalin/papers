@@ -114,12 +114,35 @@ Daala is a royalty-free video codec designed to avoid traditional patent-encumbe
 red techniques used in most current video codecs.
  In this paper, we propose to use Daala's keyframe format for still picture
  coding.
+ In June 2015, Daala was compared to other still picture codecs at the 2015
+ Picture Coding Symposium (PCS)
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "EggePCS,pcs2015"
+
+\end_inset
+
+.
+ Since then many improvements were made to the bitstream to improve its
+ quality.
+ These include reduced overlap in the lapped transform, finer quantization
+ of chroma, encoder search improvements, as well as a new deringing filter.
+ 
 \end_layout
 
 \begin_layout Standard
 Rather than describe in detail all of the coding techniques used in Daala,
  this paper provides references to previously published documents describing
  them.
+ We then present improvements since the version presented at PCS
+\begin_inset space ~
+\end_inset
+
+2015.
  We then present the results obtained and compare them to previously reported
  Daala results
 \begin_inset space ~
@@ -136,13 +159,74 @@ key "EggePCS"
 \end_layout
 
 \begin_layout Section
-Techniques
+Fundamental Daala Techniques
 \end_layout
 
 \begin_layout Standard
-One of the goal of the Daala codec is to use explore techniques that are
+One of the goals of the Daala codec is to use explore techniques that are
  very different from those typically used in most picture and video codecs.
- These techniques are listed below.
+ Most of these techniques have been fundamental to Daala since the initial
+ stages of the project.
+ Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Overview-of-the-encoder"
+
+\end_inset
+
+ shown a high-level overview of how the Daala encoder is structured for
+ still images.
+ The main techniques used are described below.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename daala_pipeline.pdf
+	width 100col%
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Overview of the Daala encoder
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Overview-of-the-encoder"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection*
@@ -260,13 +344,53 @@ key "egge2015spie"
  chroma transform coefficients.
 \end_layout
 
-\begin_layout Subsection*
-Deringing filter
+\begin_layout Section
+Recent Improvements
 \end_layout
 
 \begin_layout Standard
-The output of the Daala decoder is enhanced by a directional deringing filter
- based on a conditional replacement filter (CRF)
+Since the last evaluation at PCS, Daala has improved significantly.
+ In addition to general encoder tuning, there have been more visible changes,
+ each described below.
+\end_layout
+
+\begin_layout Subsection
+Deringing Filter
+\end_layout
+
+\begin_layout Standard
+The previous version of Daala evaluated in
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "EggePCS"
+
+\end_inset
+
+ included a deringing filter based on a directional 
+\emph on
+paint
+\emph default
+ algorithm.
+ While it provided an improvement in quality, the paint deringing filter
+ proved very hard to vectorize and efficiently implement.
+ This was mostly due to the cost of the interpolation function since each
+ pixel being 
+\emph on
+painted
+\emph default
+ required a bi-linear interpolation between up to four points on the block
+ boundaries.
+ 
+\end_layout
+
+\begin_layout Standard
+In the current version of Daala, the paint deringing filter is replaced
+ by a new directional deringing filter based on a conditional replacement
+ filter
 \begin_inset space ~
 \end_inset
 
@@ -278,41 +402,139 @@ key "ValinDeringing,DaedeDCC"
 \end_inset
 
 .
-\end_layout
+ Let 
+\begin_inset Formula $x\left(n\right)$
+\end_inset
 
-\begin_layout Section
-Results
+ denote a 1-dimensional signal and 
+\begin_inset Formula $w_{k}$
+\end_inset
+
+ denote filter tap weights, a linear finite impulse response (FIR) filter
+ with unit DC response is defined as
+\begin_inset Formula 
+\begin{equation}
+y\left(n\right)=\frac{1}{\sum_{k}w_{k}}\sum_{k}w_{k}x\left(n+k\right)\ ,\label{eq:FIR1}
+\end{equation}
+
+\end_inset
+
+which can alternatively be written as
+\begin_inset Formula 
+\begin{equation}
+y\left(n\right)=x\left(n\right)+\frac{1}{\sum_{k}w_{k}}\sum_{k,k\neq0}w_{k}\left[x\left(n+k\right)-x\left(n\right)\right]\ .\label{eq:FIR2}
+\end{equation}
+
+\end_inset
+
+The disadvantage of linear filters for removing ringing artefacts is that
+ they tend to also cause blurring.
+ To reduce the amount of blurring, the conditional replacement filter excludes
+ from the calculation the signal taps 
+\begin_inset Formula $x\left(n+k\right)$
+\end_inset
+
+ that would cause blurring and replaces them with 
+\begin_inset Formula $x\left(n\right)$
+\end_inset
+
+ instead.
+ This is determined by whether 
+\begin_inset Formula $x\left(n+k\right)$
+\end_inset
+
+ differs by 
+\begin_inset Formula $x\left(n\right)$
+\end_inset
+
+ by more than a threshold 
+\begin_inset Formula $T$
+\end_inset
+
+.
+ The FIR filter in Eq.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:FIR2"
+
+\end_inset
+
+ then becomes a conditional replacement filter expressed as
+\begin_inset Formula 
+\begin{equation}
+y\left(n\right)=x\left(n\right)+\frac{1}{\sum_{k}w_{k}}\sum_{k,k\neq0}w_{k}R\left(x\left(n+k\right)-x\left(n\right),T\right)\ ,\label{eq:CRF}
+\end{equation}
+
+\end_inset
+
+where
+\begin_inset Formula 
+\[
+R\left(x,T\right)=\left\{ \begin{array}{ll}
+x & ,\ \left|x\right|<T\\
+0 & ,\ \mathrm{otherwise}
+\end{array}\right.\ .
+\]
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
-In June 2015, Daala was compared to other still picture codecs
+
+\end_layout
+
+\begin_layout Subsection
+64x64 DCT
+\end_layout
+
+\begin_layout Subsection
+Reduced Lapping
+\end_layout
+
+\begin_layout Subsection
+Reduced Overhead Entropy Coder
+\end_layout
+
+\begin_layout Standard
+The original entropy coder in Daala is based on a multiply-free algorithm
+ described in
 \begin_inset space ~
 \end_inset
 
 
 \begin_inset CommandInset citation
 LatexCommand cite
-key "EggePCS,pcs2015"
+key "stuiver1998piecewise"
 
 \end_inset
 
 .
- Since then many improvements were made to the bitstream to improve its
- quality.
- These include reduced overlap in the lapped transform, finer quantization
- of chroma
-\begin_inset Foot
-status open
+ This version adds an alternative to the partition function for mapping
+ values from frequency counts to the coder's current range.
+ The new function is about 3x as complex as the old one, but is a better
+ approximation of the ideal function, while still having an order of magnitude
+ less complexity than a division.
+ The inverse mapping does require division by the constant three, but this
+ can be turned into multiplication (or avoided entirely).
+\end_layout
 
-\begin_layout Plain Layout
+\begin_layout Subsection
+Finer Chroma Quantization
+\end_layout
+
+\begin_layout Standard
 This results in a significant improvement in visual quality, but is obviously
  a regression in luma-only metrics.
 \end_layout
 
-\end_inset
-
-, encoder search improvements, as well as a new deringing filter.
- 
+\begin_layout Section
+Results
 \end_layout
 
 \begin_layout Standard
