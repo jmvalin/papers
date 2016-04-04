@@ -11,7 +11,7 @@
 
 %\def\@name{ \emph{Jean-Marc Valin, Nathan E. Egge, Thomas Daede, Timothy B. Terriberry},  \\ \emph{Christopher Montgomery}\vspace{0.3cm}}
 \name{Jean-Marc Valin, Nathan E. Egge, Thomas Daede, Timothy B. Terriberry, Christopher Montgomery}
-\address{Mozilla Corporation, Xiph.Org Foundation}
+\address{Mozilla, Mountain View, CA, USA \\ Xiph.Org Foundation}
 \title{Daala: A Perceptually-Driven Still Picture Codec}
 \end_preamble
 \use_default_options true
@@ -369,10 +369,35 @@ y\left(n\right)=x\left(n\right)+\frac{1}{\sum_{k}w_{k}}\sum_{k,k\neq0}w_{k}\left
 
 \end_inset
 
+The main advantage of expressing a filter in the form of Eq.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:FIR2"
+
+\end_inset
+
+ is that the normalization term 
+\begin_inset Formula $\frac{1}{\sum_{k}w_{k}}$
+\end_inset
+
+ can be approximated relatively coarsely without affecting the unit gain
+ for DC.
+ This makes it easy to use small integers for the weights 
+\begin_inset Formula $w_{k}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
 The disadvantage of linear filters for removing ringing artefacts is that
  they tend to also cause blurring.
- To reduce the amount of blurring, the conditional replacement filter excludes
- from the calculation the signal taps 
+ To reduce the amount of blurring, the conditional replacement filter used
+ in Daala excludes from the calculation the signal taps 
 \begin_inset Formula $x\left(n+k\right)$
 \end_inset
 
@@ -385,7 +410,7 @@ The disadvantage of linear filters for removing ringing artefacts is that
 \begin_inset Formula $x\left(n+k\right)$
 \end_inset
 
- differs by 
+ differs from 
 \begin_inset Formula $x\left(n\right)$
 \end_inset
 
@@ -400,7 +425,7 @@ The disadvantage of linear filters for removing ringing artefacts is that
 
 
 \begin_inset CommandInset ref
-LatexCommand ref
+LatexCommand eqref
 reference "eq:FIR2"
 
 \end_inset
@@ -467,48 +492,14 @@ pixel taps.
 \end_layout
 
 \begin_layout Standard
-Fig.
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "fig:Compressing-the-bike-image"
-
-\end_inset
-
- shows the improvement on the picture that was the most problematic
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset CommandInset citation
-LatexCommand cite
-key "DaedeDCC"
-
-\end_inset
-
- for Daala in
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset CommandInset citation
-LatexCommand cite
-key "pcs2015"
-
-\end_inset
-
-.
- 
-\end_layout
-
-\begin_layout Standard
 \begin_inset Float figure
-wide true
+wide false
 sideways false
 status open
+
+\begin_layout Plain Layout
+
+\end_layout
 
 \begin_layout Plain Layout
 \begin_inset ERT
@@ -525,8 +516,8 @@ centering{
 
 
 \begin_inset Graphics
-	filename bike_crop_pcs.png
-	width 40text%
+	filename nodering_crop.png
+	width 90col%
 
 \end_inset
 
@@ -536,17 +527,31 @@ status open
 
 \begin_layout Plain Layout
 
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
 
 \backslash
-hspace{0.4cm}
+centering{
 \end_layout
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename bike_crop_icip.png
-	width 40text%
+	filename dering_crop.png
+	width 90col%
 
 \end_inset
 
@@ -565,31 +570,12 @@ status open
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-Compressing the 
-\begin_inset Quotes eld
-\end_inset
-
-bike
-\begin_inset Quotes erd
-\end_inset
-
- image at 0.25 bit/pixel.
- Left: Previous results presented in
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset CommandInset citation
-LatexCommand cite
-key "pcs2015"
-
-\end_inset
-
-.
- Right: current result.
+Effect of the deringing filter at low bitrate.
+ Top: without deringing.
+ Bottom: with deringing.
 \begin_inset CommandInset label
 LatexCommand label
-name "fig:Compressing-the-bike-image"
+name "fig:Effect-of-deringing"
 
 \end_inset
 
@@ -598,6 +584,10 @@ name "fig:Compressing-the-bike-image"
 
 \end_inset
 
+
+\end_layout
+
+\begin_layout Plain Layout
 
 \end_layout
 
@@ -726,7 +716,8 @@ reference "sub:finer-chroma"
 minus
 \emph default
  the chroma quantization changes.
- The PSNR, PSNR-HVS, SSIM and FAST-SSIM metrics are obtained using the 
+ The PSNR, PSNR-HVS, SSIM, and FAST-SSIM metrics are obtained using the
+ 
 \emph on
 Are We Compressed Yet?
 \emph default
@@ -1034,7 +1025,7 @@ key "EggePCS"
 \end_inset
 
  and the current version.
- Lower (rate reduction) is better).
+ Lower (rate reduction) is better.
  
 \begin_inset CommandInset label
 LatexCommand label
@@ -1051,6 +1042,149 @@ name "tab:bdrate-pcs-badchroma"
 \end_layout
 
 \begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Compressing-the-bike-image"
+
+\end_inset
+
+ shows the improvement on the picture that was the most problematic
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "DaedeDCC"
+
+\end_inset
+
+ for Daala in
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "pcs2015"
+
+\end_inset
+
+.
+ Both the reduction in deringing (due to deringing and reduced lapping)
+ and the reduction in chroma artefacts (due to finer chroma quantization)
+ are visible.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide true
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename bike_crop_pcs.png
+	width 40text%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+hspace{0.4cm}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename bike_crop_icip.png
+	width 40text%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Compressing the 
+\begin_inset Quotes eld
+\end_inset
+
+bike
+\begin_inset Quotes erd
+\end_inset
+
+ image at 0.25 bit/pixel.
+ Left: Previous results presented in
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "pcs2015"
+
+\end_inset
+
+.
+ Right: current result.
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Compressing-the-bike-image"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
 
 \end_layout
 
