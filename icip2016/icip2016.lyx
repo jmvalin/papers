@@ -473,12 +473,12 @@ y\left(n\right)=x\left(n\right)+\frac{1}{\sum_{k}w_{k}}\sum_{k,k\neq0}w_{k}R\lef
 
 where
 \begin_inset Formula 
-\[
+\begin{equation}
 R\left(x,T\right)=\left\{ \begin{array}{ll}
 x & ,\ \left|x\right|<T\\
 0 & ,\ \mathrm{otherwise}
 \end{array}\right.\ .
-\]
+\end{equation}
 
 \end_inset
 
@@ -486,6 +486,267 @@ x & ,\ \left|x\right|<T\\
 \end_layout
 
 \begin_layout Standard
+To further reduce the risk of blurring the decoded image, the conditional
+ replacement filter is applied along the main direction of the edges in
+ each 8x8 block.
+ The algorithm for finding directions is described in
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "ValinDeringing"
+
+\end_inset
+
+ and is the same as the one previously used in the paint deringing filter.
+ For each 8x8 block, it determines which of eight different directions best
+ represents the content of the block.
+ It can be efficiently implemented in SIMD.
+ Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:CRF-Direction-1"
+
+\end_inset
+
+ shows how the 7-tap conditional replacement filter is applied in Daala
+ for a single pixel in a 8x8 block.
+ The process is repeated for each pixel in each block being filtered.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename crf_direction.eps
+	width 65col%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Example of the conditional replacement filter being applied to one pixel
+ (value 25) in a block with 45-degree direction.
+ Values in green have 
+\begin_inset Formula $R\left(x,T\right)\neq0$
+\end_inset
+
+ while values in red have 
+\begin_inset Formula $R\left(x,T\right)=0$
+\end_inset
+
+.
+ This figure is used under 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://creativecommons.org/licenses/by/4.0/}{CC-BY 4.0}
+\end_layout
+
+\end_inset
+
+ from
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "ValinDeringing"
+
+\end_inset
+
+.
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:CRF-Direction-1"
+
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+To reduce ringing in very smooth regions of the image, the filter is applied
+ a second time to combine multiple output values of the first filter.
+ The second filter is applied either vertically or horizontally -- in the
+ direction most orthogonal to the one used in the first filter.
+ For the 45-degree example shown in Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:CRF-Direction-1"
+
+\end_inset
+
+, the second filter would be applied vertically, as shown in Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:CRF-Direction-2"
+
+\end_inset
+
+.
+ The combined effect of the two filters is a separable deringing filter
+ that covers a total of 35
+\begin_inset space ~
+\end_inset
+
+pixel taps.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename crf_across.eps
+	width 75col%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Example of the 5-tap second conditional replacement filter run vertically.
+ This figure is used under  
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://creativecommons.org/licenses/by/4.0/}{CC-BY 4.0}
+\end_layout
+
+\end_inset
+
+ from
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "ValinDeringing"
+
+\end_inset
+
+.
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:CRF-Direction-2"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
 
 \end_layout
 
