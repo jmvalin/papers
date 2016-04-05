@@ -291,6 +291,16 @@ Recent Improvements
 \end_layout
 
 \begin_layout Standard
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:recent-improvements"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Since the last evaluation at PCS, Daala has improved significantly.
  In addition to general encoder tuning, there have been more visible changes,
  each described below.
@@ -492,14 +502,48 @@ pixel taps.
 \end_layout
 
 \begin_layout Standard
+Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Effect-of-deringing"
+
+\end_inset
+
+ shows the effect of the deringing filter on edges at low bitrate.
+ For the impact on objective metrics, see Table
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:bdrate-deringing"
+
+\end_inset
+
+ in Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:results"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
 \begin_inset Float figure
 wide false
 sideways false
 status open
-
-\begin_layout Plain Layout
-
-\end_layout
 
 \begin_layout Plain Layout
 \begin_inset ERT
@@ -699,6 +743,16 @@ Results
 \end_layout
 
 \begin_layout Standard
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:results"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 Because of the changes in chroma quantization (Section
 \begin_inset space ~
 \end_inset
@@ -842,7 +896,7 @@ PSNR
 \begin_inset Text
 
 \begin_layout Plain Layout
--6.2
+-6.3
 \end_layout
 
 \end_inset
@@ -851,7 +905,7 @@ PSNR
 \begin_inset Text
 
 \begin_layout Plain Layout
--7.0
+-6.9
 \end_layout
 
 \end_inset
@@ -860,7 +914,7 @@ PSNR
 \begin_inset Text
 
 \begin_layout Plain Layout
--7.8
+-7.9
 \end_layout
 
 \end_inset
@@ -889,7 +943,7 @@ PSNR-HVS
 \begin_inset Text
 
 \begin_layout Plain Layout
--6.7
+-6.6
 \end_layout
 
 \end_inset
@@ -898,7 +952,7 @@ PSNR-HVS
 \begin_inset Text
 
 \begin_layout Plain Layout
--6.6
+-6.3
 \end_layout
 
 \end_inset
@@ -936,7 +990,7 @@ SSIM
 \begin_inset Text
 
 \begin_layout Plain Layout
--6.4
+-6.5
 \end_layout
 
 \end_inset
@@ -956,7 +1010,7 @@ FAST-SSIM
 \begin_inset Text
 
 \begin_layout Plain Layout
--2.3
+-2.4
 \end_layout
 
 \end_inset
@@ -965,7 +1019,7 @@ FAST-SSIM
 \begin_inset Text
 
 \begin_layout Plain Layout
--2.3
+-2.2
 \end_layout
 
 \end_inset
@@ -974,7 +1028,7 @@ FAST-SSIM
 \begin_inset Text
 
 \begin_layout Plain Layout
--0.7
+-0.6
 \end_layout
 
 \end_inset
@@ -1025,7 +1079,7 @@ key "EggePCS"
 \end_inset
 
  and the current version.
- Lower (rate reduction) is better.
+ Lower is better.
  
 \begin_inset CommandInset label
 LatexCommand label
@@ -1034,6 +1088,305 @@ name "tab:bdrate-pcs-badchroma"
 \end_inset
 
  
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Among the improvements listed in Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:recent-improvements"
+
+\end_inset
+
+, the one with the largest impact on metrics is the deringing filter, as
+ shown in Table
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:bdrate-deringing"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="4">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Metric
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Low (%)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Medium (%)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+High (%)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PSNR
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-3.6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-3.0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.7
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PSNR-HVS
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-2.9
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-2.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-0.9
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SSIM
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.0
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FAST-SSIM
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++2.7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++3.4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++3.4
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Bjøntegaard-delta
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "testing-draft"
+
+\end_inset
+
+ rate imapct of the deringing filter.
+ Lower is better.
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:bdrate-deringing"
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
