@@ -835,8 +835,43 @@ reference "tab:bdrate-pcs-badchroma"
 
 \end_inset
 
- shows the recent improvements.
- 
+ shows the recent improvements at low (0.05 to 0.2
+\begin_inset space ~
+\end_inset
+
+bit/pixel), medium (0.2 to 0.5
+\begin_inset space ~
+\end_inset
+
+bit/pixel), and high (0.5 to 1.0
+\begin_inset space ~
+\end_inset
+
+bit/pixel) bitrate.
+ Among the improvements listed in Section
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:recent-improvements"
+
+\end_inset
+
+, the one with the largest impact on metrics is the deringing filter, as
+ shown in Table
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:bdrate-deringing"
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -1123,33 +1158,6 @@ name "tab:bdrate-pcs-badchroma"
 \end_layout
 
 \begin_layout Standard
-Among the improvements listed in Section
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "sec:recent-improvements"
-
-\end_inset
-
-, the one with the largest impact on metrics is the deringing filter, as
- shown in Table
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "tab:bdrate-deringing"
-
-\end_inset
-
-.
-\end_layout
-
-\begin_layout Standard
 \begin_inset Float table
 wide false
 sideways false
@@ -1385,18 +1393,7 @@ status open
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-Bjøntegaard-delta
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset CommandInset citation
-LatexCommand cite
-key "testing-draft"
-
-\end_inset
-
- rate imapct of the deringing filter.
+Bjøntegaard-delta rate imapct of the deringing filter.
  Lower is better.
 \begin_inset CommandInset label
 LatexCommand label
@@ -1429,7 +1426,7 @@ reference "fig:Compressing-the-bike-image"
 
 \end_inset
 
- shows the improvement on the picture that was the most problematic
+ shows the visual improvement on the picture that was the most problematic
 \begin_inset space ~
 \end_inset
 
@@ -1561,6 +1558,81 @@ name "fig:Compressing-the-bike-image"
 \end_layout
 
 \begin_layout Standard
+Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:RD-curve-PSNR-HVS"
+
+\end_inset
+
+ shows the PSNR-HVS rate distortion performance of Daala compared to JPEG
+ (libjpeg and mozjpeg), WebP, x264, and x265, using PSNR-HVS.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename icip-lin-psnrhvs.png
+	lyxscale 50
+	width 90col%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Rate-distortion comparison between different codecs using PSNR-HVS.
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:RD-curve-PSNR-HVS"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
 
 \end_layout
 
