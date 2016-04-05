@@ -97,10 +97,10 @@ maketitle
 \end_layout
 
 \begin_layout Abstract
-Daala is a new royalty-free video codec that is based on several new perceptuall
-y-driven coding techniques.
- We explore the application of its keyframe format for still picture coding
- purposes and show how it has improved over the past year.
+Daala is a new royalty-free video codec based on perceptually-driven coding
+ techniques.
+ We explore using its keyframe format for still picture coding and show
+ how it has improved over the past year.
  We believe the technology used in Daala could be the basis of an excellent,
  royalty-free image format.
 \end_layout
@@ -143,8 +143,8 @@ Rather than describe in detail all of the coding techniques used in Daala,
 \end_inset
 
 2015.
- We then present the results obtained and compare them to previously reported
- Daala results
+ Finally, we present the results obtained and compare them to previously
+ reported results
 \begin_inset space ~
 \end_inset
 
@@ -163,11 +163,11 @@ Fundamental Daala Techniques
 \end_layout
 
 \begin_layout Standard
-One of the goals of the Daala codec is to use explore techniques that are
- very different from those typically used in most picture and video codecs.
+One of the goals of the Daala codec is to explore techniques that are very
+ different from those typically used in most codecs.
  Most of these techniques have been fundamental to Daala since the initial
  stages of the project.
- These techniques are described below.
+ They are described below.
  
 \end_layout
 
@@ -214,8 +214,8 @@ key "EggePCS"
 \end_inset
 
 .
- Also, the DC of blocks are combined recursively using a Haar transform,
- up to 64x64 superblocks.
+ Also, DC coefficients are combined recursively using a Haar transform,
+ up to the level of 64x64 superblocks.
  
 \end_layout
 
@@ -239,6 +239,8 @@ key "derfTools"
 \end_inset
 
 .
+ This is equivalent to coding up to four binary values in parallel and reduces
+ serial dependencies.
 \end_layout
 
 \begin_layout Subsection*
@@ -247,7 +249,7 @@ Perceptual Vector Quantization
 
 \begin_layout Standard
 Rather than use scalar quantization like the vast majority of picture and
- video codecs, Daala is based on a perceptual vector quantization (PVQ)
+ video codecs, Daala is based on perceptual vector quantization (PVQ)
 \begin_inset space ~
 \end_inset
 
@@ -258,7 +260,7 @@ key "valin2015spie"
 
 \end_inset
 
- technique.
+.
  PVQ makes it possible to take into account masking effects with no extra
  signaling.
  
@@ -269,8 +271,8 @@ Chroma from Luma (CfL) Prediction
 \end_layout
 
 \begin_layout Standard
-Because of its structure, the PVQ technique makes it especially easy to
- predict chroma planes from the luma plane.
+Because of its structure, PVQ makes it especially easy to predict chroma
+ planes from the luma plane.
  Daala's chroma from luma (CfL)
 \begin_inset space ~
 \end_inset
@@ -282,8 +284,8 @@ key "egge2015spie"
 
 \end_inset
 
- prediction uses the luma transform coefficients to directly predict the
- chroma transform coefficients.
+ prediction uses the luma transform coefficients to predict the chroma transform
+ coefficients.
 \end_layout
 
 \begin_layout Section
@@ -329,13 +331,9 @@ paint
  algorithm.
  While it provided an improvement in quality, the paint deringing filter
  proved very hard to vectorize and efficiently implement.
- This was mostly due to the cost of the interpolation function since each
- pixel being 
-\emph on
-painted
-\emph default
- required a bi-linear interpolation between up to four points on the block
- boundaries.
+ This was mostly due to the complicated per-pixel weights used in block
+ interiors, which blended up to four points from the block boundary, selected
+ in ways that were not regular over an entire block.
  
 \end_layout
 
@@ -407,7 +405,7 @@ reference "eq:FIR2"
 The disadvantage of linear filters for removing ringing artefacts is that
  they tend to also cause blurring.
  To reduce the amount of blurring, the conditional replacement filter used
- in Daala excludes from the calculation the signal taps 
+ in Daala excludes the signal taps 
 \begin_inset Formula $x\left(n+k\right)$
 \end_inset
 
@@ -631,10 +629,6 @@ name "fig:Effect-of-deringing"
 
 \end_layout
 
-\begin_layout Plain Layout
-
-\end_layout
-
 \end_inset
 
 
@@ -665,12 +659,11 @@ key "EggePCS"
 \end_inset
 
  was fixed at 8-point almost everywhere, with the exception that an 8x8
- block being subdivided into 4 4x4 blocks used 4-point lapping on the internal
- boundaries.
+ block being subdivided into four 4x4 blocks used 4-point lapping on the
+ internal boundaries.
  This caused 4x4 transform blocks to have 4-point lapping on two sides and
  8-point lapping on the other two sides.
- In the current version of Daala, only 4-point lapping is used on all block
- boundaries.
+ The current version of Daala uses 4-point lapping on all block boundaries.
  Although it makes textures slightly worse and causes slightly more blocking
  artefacts, the ringing on edges is significantly reduced by using 4-point
  lapping.
@@ -695,13 +688,32 @@ key "stuiver1998piecewise"
 \end_inset
 
 .
- This version adds an alternative to the partition function for mapping
- values from frequency counts to the coder's current range.
- The new function is about 3x as complex as the old one, but is a better
- approximation of the ideal function, while still having an order of magnitude
- less complexity than a division.
- The inverse mapping does require division by the constant three, but this
- can be turned into multiplication (or avoided entirely).
+ We have replaced the piecewise linear integer mapping from that paper with
+ a new mapping that has less approximation error.
+ Using the notation from
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "stuiver1998piecewise"
+
+\end_inset
+
+, the new partition function is
+\begin_inset Formula 
+\begin{align*}
+e & =\max(2R-3t,0)\\
+f(x,t,R) & =x+\min(x,e)+\min\Bigl(\Bigl\lfloor\frac{\max(x-e,0)}{2}\Bigr\rfloor,R-t\Bigr)
+\end{align*}
+
+\end_inset
+
+This mapping is about three times as expensive to evaluate, but remains
+ an order of magnitude less complex than a division.
+ It reduces the average overhead introduced by entropy coder by about 0.3%,
+ though it may ultimately prove to be too expensive to justify this reduction.
 \end_layout
 
 \begin_layout Subsection
@@ -732,10 +744,10 @@ key "EggePCS"
 
  are chroma quantization artefacts caused by the chroma quantization being
  coarser than luma quantization at all bitrates.
- Since then, the chroma quantizers have change to be coarser than luma at
- high bitrate, but finer at low bitrate.
+ Since then, the chroma quantizers have changed to be coarser than luma
+ at high bitrate, but finer at low bitrate.
  Although this results in a significant improvement in visual quality, it
- is obviously a regression in all the commonly-used luma-only metrics.
+ obviously regresses all the commonly-used luma-only metrics.
 \end_layout
 
 \begin_layout Section
@@ -818,10 +830,6 @@ reference "tab:bdrate-pcs-badchroma"
 wide false
 sideways false
 status open
-
-\begin_layout Plain Layout
-
-\end_layout
 
 \begin_layout Plain Layout
 \begin_inset ERT
@@ -1092,10 +1100,6 @@ name "tab:bdrate-pcs-badchroma"
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Plain Layout
 
 \end_layout
 
@@ -1394,10 +1398,6 @@ name "tab:bdrate-deringing"
 
 \end_layout
 
-\begin_layout Plain Layout
-
-\end_layout
-
 \end_inset
 
 
@@ -1553,7 +1553,8 @@ Future Work
 \begin_layout Standard
 The Daala bit-stream has not been frozen yet, so it is still being improved.
  Among the recent features not demonstrated here are support for image bit
- depths up to 12 bits, as well as a special coding
+ depths up to 12 bits, as well as a special coding tool for non-photographic
+ computer-generated images
 \begin_inset space ~
 \end_inset
 
@@ -1564,8 +1565,8 @@ key "valinL1TW"
 
 \end_inset
 
- tool for non-photographic computer-generated images that are currently
- more appropriately coded with PNG rather than JPEG.
+, which are generally better compressed with pixel prediction than block-based
+ transform coding.
  However, some features such as metadata support and lossless RGB are still
  missing.
 \end_layout
