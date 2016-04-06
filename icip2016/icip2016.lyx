@@ -662,7 +662,7 @@ Larger transform sizes generally provide better coding efficiency, particularly
 
 \begin_inset CommandInset citation
 LatexCommand cite
-key "EggePCS"
+key "pcs2015"
 
 \end_inset
 
