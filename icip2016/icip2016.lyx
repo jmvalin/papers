@@ -190,7 +190,7 @@ key "MalvarS89,Tran2003"
 \end_inset
 
  rather than a regular DCT followed by a deblocking filter.
- This reduces blocking artefacts but prevents the use of standard pixel-based
+ This reduces blocking artifacts but prevents the use of standard pixel-based
  intra-prediction techniques
 \begin_inset space ~
 \end_inset
@@ -404,7 +404,7 @@ reference "eq:FIR2"
 \end_layout
 
 \begin_layout Standard
-The disadvantage of linear filters for removing ringing artefacts is that
+The disadvantage of linear filters for removing ringing artifacts is that
  they tend to also cause blurring.
  To reduce the amount of blurring, the conditional replacement filter used
  in Daala excludes the signal taps 
@@ -697,7 +697,7 @@ key "EggePCS"
  8-point lapping on the other two sides.
  The current version of Daala uses 4-point lapping on all block boundaries.
  Although it makes textures slightly worse and causes slightly more blocking
- artefacts, the ringing on edges is significantly reduced by using 4-point
+ artifacts, the ringing on edges is significantly reduced by using 4-point
  lapping.
  
 \end_layout
@@ -763,7 +763,7 @@ name "sub:finer-chroma"
 \end_layout
 
 \begin_layout Standard
-Among the most visible artefacts from the Daala version in
+Among the most visible artifacts from the Daala version in
 \begin_inset space ~
 \end_inset
 
@@ -774,7 +774,7 @@ key "EggePCS"
 
 \end_inset
 
- are chroma quantization artefacts caused by the chroma quantization being
+ are chroma quantization artifacts caused by the chroma quantization being
  coarser than luma quantization at all bitrates.
  Since then, the chroma quantizers have changed to be coarser than luma
  at high bitrate, but finer at low bitrate.
@@ -1468,7 +1468,7 @@ key "pcs2015"
 
 .
  Both the reduction in deringing (due to deringing and reduced lapping)
- and the reduction in chroma artefacts (due to finer chroma quantization)
+ and the reduction in chroma artifacts (due to finer chroma quantization)
  are visible.
  
 \end_layout
