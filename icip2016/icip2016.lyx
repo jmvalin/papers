@@ -671,8 +671,8 @@ key "EggePCS"
 ts is quantized and coded.
  This provides additional performance as regions where 64x64 blocks are
  used typically lack high frequency detail.
- This makes it possible for a Daala based picture codec to use a lower complexit
-y 64-point DCT which does not compute the upper 32 frequencies.
+ This also makes it possible for a Daala based picture codec to use a lower
+ complexity 64-point DCT which does not compute the upper 32 frequencies.
 \end_layout
 
 \begin_layout Subsection
