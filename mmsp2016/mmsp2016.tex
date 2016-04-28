@@ -1,0 +1,164 @@
+%% LyX 2.1.4 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english,conference,10pt]{IEEEtran}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\begin{document}
+
+\title{Daala: Building A Next-Generation Video Codec From Unconventional
+Technology}
+
+
+\author{\author{\IEEEauthorblockN{Some authors\IEEEauthorrefmark{1}\IEEEauthorrefmark{2}}
+\IEEEauthorblockA{\IEEEauthorrefmark{1}Mozilla Corporation, Mountain View, USA}\\
+\IEEEauthorblockA{\IEEEauthorrefmark{2}Xiph.Org Foundation, USA}
+}}
+\maketitle
+\begin{abstract}
+Daala is a new royalty-free video codec based on perceptually-driven
+coding techniques.
+\end{abstract}
+
+
+\section{Introduction}
+
+Daala is a royalty-free video codec designed to avoid traditional
+patent-encumbered techniques used in most current video codecs. One
+of the goals of the Daala codec is to explore techniques that are
+very different from those typically used in most codecs.
+
+
+\section{Daala Techniques}
+
+One of the goals of the Daala codec is to explore techniques that
+are very different from those typically used in most codecs. Most
+of these techniques have been fundamental to Daala since the initial
+stages of the project. 
+
+
+\subsection{Lapping}
+
+Daala uses lapped transforms~\cite{MalvarS89,Tran2003} rather than
+a regular DCT followed by a deblocking filter. 
+
+This reduces blocking artifacts but prevents the use of standard pixel-based
+intra-prediction techniques~\cite{DaedeDCC}. Instead, we use a simple
+frequency-domain intra predictor that only handles horizontal and
+vertical directions~\cite{EggePCS}. 
+
+Also, DC coefficients are combined recursively using a Haar transform,
+up to the level of 64x64 superblocks. 
+
+
+\subsection{Multi-Symbol Entropy Coder}
+
+Most recent video codecs encode information using binary arithmetic
+coding, meaning that each symbol can only take two values. The Daala
+range coder supports up to 16 values per symbol, making it possible
+to encode fewer symbols~\cite{derfTools}. This is equivalent to
+coding up to four binary values in parallel and reduces serial dependencies. 
+
+To achieve this, Daala uses a multiply-free range coder approximation~\cite{stuiver1998piecewise}. 
+
+
+\subsection{Overlapped Block Motion Compensation}
+
+Lapping -> Straight BMA is a no-go
+
+
+\subsection{Perceptual Vector Quantization}
+
+In the majority of video codecs, motion-compensated reference frame
+is subtracted from the input frame to compute a residual, which is
+then transformed, and coded using scalar quantization. Daala differs
+significantly from that description. Not only does it use vector quantization
+rather than scalar quantization, but -- most importantly -- the motion-compensated
+reference is never subtracted from the input frame. Instead, both
+the motion-compensated reference is used to build a transformation
+that makes the input easier to code. This technique is called perceptual
+vector quantization (PVQ)~\cite{valin2015spie}.
+
+Perceptual vector quantization originates in the pyramid vector quantizer
+previously used for music in the Opus audio codec~\cite{ValinAES}.
+
+PVQ makes it possible to take into account masking effects with no
+extra signaling. 
+
+
+\subsection{Chroma from Luma (CfL) Prediction}
+
+Because of its structure, PVQ makes it especially easy to predict
+chroma planes from the luma plane. Daala's chroma from luma (CfL)~\cite{egge2015spie}
+prediction uses the luma transform coefficients to predict the chroma
+transform coefficients.
+
+
+\subsection{Directional Deringing Filter}
+
+Let $x\left(n\right)$ denote a 1-dimensional signal and $w_{k}$
+denote filter tap weights, a linear finite impulse response (FIR)
+filter with unit DC response is defined as
+\begin{equation}
+y\left(n\right)=\frac{1}{\sum_{k}w_{k}}\sum_{k}w_{k}x\left(n+k\right)\ ,\label{eq:FIR1}
+\end{equation}
+which can alternatively be written as
+\begin{equation}
+y\left(n\right)=x\left(n\right)+\frac{1}{\sum_{k}w_{k}}\sum_{k,k\neq0}w_{k}\left[x\left(n+k\right)-x\left(n\right)\right]\ .\label{eq:FIR2}
+\end{equation}
+The main advantage of expressing a filter in the form of Eq.~(\ref{eq:FIR2})
+is that the normalization term $\frac{1}{\sum_{k}w_{k}}$ can be approximated
+relatively coarsely without affecting the unit gain for DC. This makes
+it easy to use small integers for the weights $w_{k}$.
+
+The disadvantage of linear filters for removing ringing artifacts
+is that they tend to also cause blurring. To reduce the amount of
+blurring, the conditional replacement filter used in Daala excludes
+the signal taps $x\left(n+k\right)$ that would cause blurring and
+replaces them with $x\left(n\right)$ instead. This is determined
+by whether $x\left(n+k\right)$ differs from $x\left(n\right)$ by
+more than a threshold $T$. The FIR filter in Eq.~(\ref{eq:FIR2})
+then becomes a conditional replacement filter expressed as
+\begin{equation}
+y\left(n\right)=x\left(n\right)+\frac{1}{\sum_{k}w_{k}}\sum_{k,k\neq0}w_{k}R\left(x\left(n+k\right)-x\left(n\right),T\right)\ ,\label{eq:CRF}
+\end{equation}
+where
+\begin{equation}
+R\left(x,T\right)=\left\{ \begin{array}{ll}
+x & ,\ \left|x\right|<T\\
+0 & ,\ \mathrm{otherwise}
+\end{array}\right.\ .
+\end{equation}
+
+
+To further reduce the risk of blurring the decoded image, the conditional
+replacement filter is applied along the main direction of the edges
+in each 8x8 block. The algorithm for finding directions is described
+in~\cite{ValinDeringing} and is the same as the one previously used
+in the paint deringing filter. For each 8x8 block, it determines which
+of eight different directions best represents the content of the block.
+It can be efficiently implemented in SIMD. A 7-tap conditional replacement
+filter is applied in Daala for a single pixel in a 8x8 block. The
+process is repeated for each pixel in each block being filtered.
+
+To reduce ringing in very smooth regions of the image, the filter
+is applied a second time to combine multiple output values of the
+first filter. The second filter is applied either vertically or horizontally
+-- in the direction most orthogonal to the one used in the first filter.
+For example, for a 45-degree direction, the second filter would be
+applied vertically. The combined effect of the two filters is a separable
+deringing filter that covers a total of 35~pixel taps.
+
+
+\section{Alliance for Open Media AV1 codec}
+
+
+\section{Results}
+
+
+\section{Conclusion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{daala}
+
+\end{document}
