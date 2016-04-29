@@ -4,6 +4,8 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{babel}
+\usepackage{amsfonts}
+\usepackage{amssymb}
 \begin{document}
 
 \title{Daala: Building A Next-Generation Video Codec From Unconventional
@@ -104,9 +106,40 @@ Once the reflection plane is computed, it is applied to the input vector $\mathb
 \mathbf{z} = \mathbf{x} - 2\frac{\mathbf{x}^T\mathbf{v}}
 {\mathbf{v}^T\mathbf{v}}\mathbf{v}\ .
 \end{equation}
+When the input is similar to the prediction itself, the direction of the
+reflected vector $\mathbf{z}$ is close $-\mathbf{e}_m$. To take advantage of
+that fact, we express it as
+\begin{equation}
+\mathbf{z} = g\left(-s\cos\theta + \mathbf{u}\sin\theta\right)\ ,
+\end{equation}
+where $g$ is the magnitude of $\mathbf{z}$ (and thus also the magnitude of
+$\mathbf{x}$), $\mathbf{u}$ is a unit vector with no component along the
+$\mathbf{e}_m$ direction, and the angle $\theta$ representing the
+similarity between the prediction and the input. Since the Householder
+reflection is orthonormal, it follows that
+\begin{equation}
+\theta = \arccos\frac{\mathbf{x}^T\mathbf{r}}
+                   {\left\|\mathbf{x}\right\|\left\|\mathbf{r}\right\|}\ .
+\end{equation}
 
-When the input is similar to the prediction itself, the direction of the reflected
-vector $\mathbf{z}$ is close $-\mathbf{e}_m$, making it easier to code. 
+The unit vector $\mathbf{u}$ can be coded using a spherical quantizer derived
+from the pyramid vector quantizer~\cite{Fischer1986}:
+\begin{equation}
+\mathbf{u}=\frac{\mathbf{y}}{\left\|\mathbf{y}\right\|}\ ,
+\end{equation}
+with
+\begin{equation}
+\mathbf{y} \in \mathbb{Z}^N : \left\|\mathbf{y}\right\|_{L1} = K \land y_m=0\ ,
+\end{equation}
+where the number of \textit{pulses} $K$ controls the size of the codebook.
+
+The encoder quantizes $g$ and $\theta$ and encodes them in the bitstream along
+with the integer vector $\mathbf{y}$ (except for $y_m=0$). The codebook
+size $K$ is determined only from $g$ and $theta$ and does not need to be
+transmitted. Since the decoder also has access to the prediction, the
+reflection vector $\mathbf{v}$ and the values $m$ and $s$ do not need to
+be transmitted. 
+
 
 PVQ makes it possible to take into account masking effects with no
 extra signaling. 
