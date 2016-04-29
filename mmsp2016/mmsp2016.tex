@@ -2,7 +2,7 @@
 %% Do not edit unless you really know what you are doing.
 \documentclass[english,conference,10pt]{IEEEtran}
 \usepackage[T1]{fontenc}
-\usepackage[latin9]{inputenc}
+\usepackage[utf8]{inputenc}
 \usepackage{babel}
 \begin{document}
 
@@ -80,7 +80,33 @@ that makes the input easier to code. This technique is called perceptual
 vector quantization (PVQ)~\cite{valin2015spie}.
 
 Perceptual vector quantization originates in the pyramid vector quantizer
-previously used for music in the Opus audio codec~\cite{ValinAES}.
+previously used for music in the Opus audio codec~\cite{ValinAES}. In Opus,
+the pyramid vector quantizer is used as a gain-shape quantizer in a way that
+ensures that the signal energy is always conserved. Using a gain-shape
+quantizer in a video codec is more complicated, since we need to also take
+into account a prediction. While it would be possible to quantize the difference
+between the prediction and the input, conserving the energy of that
+difference would be perceptually meaningless.
+
+Rather than attempting to encode the difference, the prediction produces
+a Householder reflection that makes the input easier to encode. Let 
+$\mathbf{x}$ be the input and $\mathbf{r}$ be the prediction, we construct a Householder reflection plane
+\begin{equation}
+\mathbf{v} = \frac{\mathbf{r}}{\|\mathbf{r}\|} + s\mathbf{e}_m\ ,
+\end{equation}
+where $\mathbf{e}_m$ is a unit vector along dimension $m$ and $s = \pm1$.
+The values of $m$ and $s$ can be chosen arbitrarily, but to maximize
+numerical stability, we typically choose $m$ to be the position of the
+largest absolute value in $\mathbf{r}$ and $s$ to be the sign of that value.
+
+Once the reflection plane is computed, it is applied to the input vector $\mathbf{x}$ to produce the reflected vector $\mathbf{z}$:
+\begin{equation}
+\mathbf{z} = \mathbf{x} - 2\frac{\mathbf{x}^T\mathbf{v}}
+{\mathbf{v}^T\mathbf{v}}\mathbf{v}\ .
+\end{equation}
+
+When the input is similar to the prediction itself, the direction of the reflected
+vector $\mathbf{z}$ is close $-\mathbf{e}_m$, making it easier to code. 
 
 PVQ makes it possible to take into account masking effects with no
 extra signaling. 
