@@ -1,9 +1,9 @@
-%% LyX 2.1.4 created this file.  For more info, see http://www.lyx.org/.
-%% Do not edit unless you really know what you are doing.
+% Originally from a LyX file
 \documentclass[english,conference,10pt]{IEEEtran}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{babel}
+\usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \begin{document}
@@ -138,7 +138,20 @@ with the integer vector $\mathbf{y}$ (except for $y_m=0$). The codebook
 size $K$ is determined only from $g$ and $theta$ and does not need to be
 transmitted. Since the decoder also has access to the prediction, the
 reflection vector $\mathbf{v}$ and the values $m$ and $s$ do not need to
-be transmitted. 
+be transmitted. In total, there are $N-2$ degrees of freedom to code in $\mathbf{y}$, with two more for $g$ and $\theta$, so the total is still
+$N$ degrees of freedom. The main difference however is that two of the
+coded values have a perceptual meaning: $g$ is the amount of contrast and
+$\theta$ is the amount of change compared to the prediction. By coding $g$
+as a parameter, it is easier to preserve the amount of contrast than by
+coding only DCT coefficients.
+
+In practice, the vectors $\mathbf{x}$ and $\mathbf{r}$ are transform
+coefficients rather than pixel values. This requires an extra forward DCT
+in both the encoder and the decoder since the input and the prediction need
+to be transformed separately. Only the AC coefficients are coded using PVQ
+and for blocks larger than 4x4, the AC coefficients are divided into multiple
+\textit{bands} where each band is coded separately. This makes it possible
+to control the contrast separately, based on octave and direction.
 
 
 PVQ makes it possible to take into account masking effects with no
@@ -154,6 +167,13 @@ transform coefficients.
 
 
 \subsection{Directional Deringing Filter}
+
+Like other transform codecs, Daala can cause ringing artifacts around edges.
+The directional deringing filter attempts to eliminate the ringing without
+blurring the image. Unlike the HEVC Sample-Adaptive Offset (SAO)~\cite{HEVC-SAO},
+the Daala deringing filter is not based on classifying pixels and applying per-class
+offsets. Instead, it is a directional outlier-robust filter that smooths the
+neighborhood of pixels while preserving edges.
 
 Let $x\left(n\right)$ denote a 1-dimensional signal and $w_{k}$
 denote filter tap weights, a linear finite impulse response (FIR)
@@ -189,23 +209,22 @@ x & ,\ \left|x\right|<T\\
 \end{array}\right.\ .
 \end{equation}
 
-
 To further reduce the risk of blurring the decoded image, the conditional
 replacement filter is applied along the main direction of the edges
-in each 8x8 block. The algorithm for finding directions is described
-in~\cite{ValinDeringing} and is the same as the one previously used
-in the paint deringing filter. For each 8x8 block, it determines which
+in each 8x8 block. The direction is determined based on the decoded image
+(no side information transmitted) by analyzing each 8x8 block as described
+in~\cite{ValinDeringing}. For each 8x8 block, the decoder determines which
 of eight different directions best represents the content of the block.
-It can be efficiently implemented in SIMD. A 7-tap conditional replacement
-filter is applied in Daala for a single pixel in a 8x8 block. The
-process is repeated for each pixel in each block being filtered.
+The search can be efficiently implemented in SIMD. To filter a pixel, a 7-tap
+conditional replacement filter is applied along the detected direction.
+The process is repeated for each pixel in each block being filtered.
 
-To reduce ringing in very smooth regions of the image, the filter
+To further reduce ringing in very smooth regions of the image, the filter
 is applied a second time to combine multiple output values of the
 first filter. The second filter is applied either vertically or horizontally
 -- in the direction most orthogonal to the one used in the first filter.
 For example, for a 45-degree direction, the second filter would be
-applied vertically. The combined effect of the two filters is a separable
+applied horizontally. The combined effect of the two filters is a separable
 deringing filter that covers a total of 35~pixel taps.
 
 
