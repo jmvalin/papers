@@ -6,6 +6,7 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
+\usepackage{units}
 \begin{document}
 
 \title{Daala: Building A Next-Generation Video Codec From Unconventional
@@ -153,10 +154,28 @@ and for blocks larger than 4x4, the AC coefficients are divided into multiple
 \textit{bands} where each band is coded separately. This makes it possible
 to control the contrast separately, based on octave and direction.
 
-
 PVQ makes it possible to take into account masking effects with no
-extra signaling. 
+extra signaling. Since the gain is explicitly signaled, it is easy to make
+the quantization resolution dependent on the gain. This dependency can be
+expressed as
+\begin{equation}
+E\left\lbrace \left\| \mathbf{x} - \hat{\mathbf{x}} \right\|^2 \right\rbrace
+\propto g^{2\alpha}\ , 0 \leq \alpha \leq 1\ ,
+\end{equation}
+where $\alpha=0$ behaves like a standard linear scalar quantizer and
+$\alpha=1$ produces a constant relative error like in the Opus audio codec.
+Daala uses $\alpha = \nicefrac{1}{3}$. To achieve this, we quantize the
+companded gain
+\begin{equation}
+\gamma = g^{1-\alpha}\ .
+\end{equation}
 
+The decoder always decodes the quantized companded gain $\hat{\gamma}$
+first. From there it can compute the quantization step size for $\theta$ as
+\begin{equation}
+Q_\theta = \frac{\pi}{2\beta}{\hat{\gamma}}\ ,
+\end{equation}
+where $\beta = 1/(1-\alpha)$.
 
 \subsection{Chroma from Luma (CfL) Prediction}
 
@@ -229,7 +248,7 @@ deringing filter that covers a total of 35~pixel taps.
 
 
 \section{Alliance for Open Media AV1 codec}
-
+Some of the
 
 \section{Results}
 
