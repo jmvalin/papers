@@ -191,10 +191,17 @@ where $\beta = 1/(1-\alpha)$.
 
 \subsection{Chroma from Luma (CfL) Prediction}
 
-Because of its structure, PVQ makes it especially easy to predict
+Although the use of $\mathrm{Y'C_bC_r}$ reduces the correlation across planes
+compared to RGB, there still exists a correlation between the chroma planes
+$\mathrm{C_b}$ and $\mathrm{C_r}$ and the luma plane Y'. Edges in chroma tend to
+align very well with edges in luma with only the amount of contrast (gain) differing.
+Because of that property, PVQ makes it especially easy to predict
 chroma planes from the luma plane. Daala's chroma from luma (CfL)~\cite{egge2015spie}
-prediction uses the luma transform coefficients to predict the chroma
-transform coefficients.
+prediction directly uses the luma transform coefficients as the prediction vector
+$\mathbf{r}$ for coding the chroma coefficients with PVQ. The main difference compared
+to the normal way of using PVQ is that a sign needs to be coded for the prediction
+(since the luma plane and chroma plane coefficients may be negatively correlated) and
+that the gain of the chroma cannot be predicted from the gain of the luma.
 
 
 \subsection{Directional Deringing Filter}
