@@ -35,10 +35,10 @@ had not been applied to video coding before. While Daala is not yet
 a competitive codec on its own, some of the techniques it uses are
 currently being integrated in the Alliance For Open Media (AOM) AV1 codec.
 
-Section \ref{sec:techniques} describes the non-traditional techniques used
-in Daala and Section \ref{sec:AOM} discusses how these techniques fit within
+Section~\ref{sec:techniques} describes the non-traditional techniques used
+in Daala and Section~\ref{sec:AOM} discusses how these techniques fit within
 the new AV1 codec. We then present some results obtained with Daala and AV1
-in Section \ref{sec:Results}.
+in Section~\ref{sec:Results}.
 
 \section{Daala Techniques}
 \label{sec:techniques}
@@ -76,7 +76,9 @@ To achieve this, Daala uses a multiply-free range coder approximation~\cite{stui
 
 \subsection{Overlapped Block Motion Compensation}
 
-Lapping -> Straight BMA is a no-go
+Because of the use of lapping we need a way to avoid blocking artifacts
+in the prediction. For this we use overlapped block motion compensation
+(OBMC)~\cite{OBMC}.
 
 
 \subsection{Perceptual Vector Quantization}
@@ -179,8 +181,10 @@ $\alpha=1$ produces a constant relative error like in the Opus audio codec.
 Daala uses $\alpha = \nicefrac{1}{3}$. To achieve this, we quantize the
 companded gain
 \begin{equation}
-\gamma = g^{1-\alpha}\ .
+\gamma = g^{1-\alpha}\ ,
 \end{equation}
+giving finer resolution to smaller gains and coarser resolution to larger
+gains.
 
 The decoder always decodes the quantized companded gain $\hat{\gamma}$
 first. From there it can compute the quantization step size for $\theta$ as
