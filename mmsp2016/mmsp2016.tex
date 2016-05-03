@@ -29,10 +29,19 @@ coding techniques.
 Daala is a royalty-free video codec designed to avoid traditional
 patent-encumbered techniques used in most current video codecs. One
 of the goals of the Daala codec is to explore techniques that are
-very different from those typically used in most codecs.
+very different from those typically used in most codecs. Some of
+these techniques are new to Daala, while others already existed, but
+had not been applied to video coding before. While Daala is not yet
+a competitive codec on its own, some of the techniques it uses are
+currently being integrated in the Alliance For Open Media (AOM) AV1 codec.
 
+Section \ref{sec:techniques} describes the non-traditional techniques used
+in Daala and Section \ref{sec:AOM} discusses how these techniques fit within
+the new AV1 codec. We then present some results obtained with Daala and AV1
+in Section \ref{sec:Results}.
 
 \section{Daala Techniques}
+\label{sec:techniques}
 
 One of the goals of the Daala codec is to explore techniques that
 are very different from those typically used in most codecs. Most
@@ -93,7 +102,8 @@ difference would be perceptually meaningless.
 
 Rather than attempting to encode the difference, the prediction produces
 a Householder reflection that makes the input easier to encode. Let 
-$\mathbf{x}$ be the input and $\mathbf{r}$ be the prediction, we construct a Householder reflection plane
+$\mathbf{x}$ be the input and $\mathbf{r}$ be the prediction, we construct
+ a Householder reflection plane
 \begin{equation}
 \mathbf{v} = \frac{\mathbf{r}}{\|\mathbf{r}\|} + s\mathbf{e}_m\ ,
 \end{equation}
@@ -102,7 +112,8 @@ The values of $m$ and $s$ can be chosen arbitrarily, but to maximize
 numerical stability, we typically choose $m$ to be the position of the
 largest absolute value in $\mathbf{r}$ and $s$ to be the sign of that value.
 
-Once the reflection plane is computed, it is applied to the input vector $\mathbf{x}$ to produce the reflected vector $\mathbf{z}$:
+Once the reflection plane is computed, it is applied to the input vector
+$\mathbf{x}$ to produce the reflected vector $\mathbf{z}$:
 \begin{equation}
 \mathbf{z} = \mathbf{x} - 2\frac{\mathbf{x}^T\mathbf{v}}
 {\mathbf{v}^T\mathbf{v}}\mathbf{v}\ .
@@ -139,7 +150,8 @@ with the integer vector $\mathbf{y}$ (except for $y_m=0$). The codebook
 size $K$ is determined only from $g$ and $theta$ and does not need to be
 transmitted. Since the decoder also has access to the prediction, the
 reflection vector $\mathbf{v}$ and the values $m$ and $s$ do not need to
-be transmitted. In total, there are $N-2$ degrees of freedom to code in $\mathbf{y}$, with two more for $g$ and $\theta$, so the total is still
+be transmitted. In total, there are $N-2$ degrees of freedom to code in
+$\mathbf{y}$, with two more for $g$ and $\theta$, so the total is still
 $N$ degrees of freedom. The main difference however is that two of the
 coded values have a perceptual meaning: $g$ is the amount of contrast and
 $\theta$ is the amount of change compared to the prediction. By coding $g$
@@ -248,9 +260,12 @@ deringing filter that covers a total of 35~pixel taps.
 
 
 \section{Alliance for Open Media AV1 codec}
+\label{sec:AOM}
+
 Some of the
 
 \section{Results}
+\label{sec:Results}
 
 
 \section{Conclusion}
