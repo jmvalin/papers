@@ -46,8 +46,11 @@ in Section~\ref{sec:Results}.
 One of the goals of the Daala codec is to explore techniques that
 are very different from those typically used in most codecs. Most
 of these techniques have been fundamental to Daala since the initial
-stages of the project. 
-
+stages of the project. In this description, a \textit{block} refers to
+a square transform block, whereas a \textit{superblock} refers to the
+largest area of a frame on which Daala can operate. Superblocks are 64x64
+pixels in Daala. Also, vector variables are denoted in bold, and quantized
+variables are denoted with a hat.
 
 \subsection{Lapping}
 
@@ -59,9 +62,18 @@ intra-prediction techniques~\cite{DaedeDCC}. Instead, we use a simple
 frequency-domain intra predictor that only handles horizontal and
 vertical directions~\cite{EggePCS}. 
 
-Also, DC coefficients are combined recursively using a Haar transform,
-up to the level of 64x64 superblocks. 
 
+\subsection{Haar DC}
+
+Since Daala lacks intra prediction, the DCs of all transforms within a superblock
+are transform-coded with a 2D Haar wavelet.
+Also, DC coefficients are combined recursively using a Haar transform,
+up to the level of the corresponding superblock. Since Daala transform blocks
+are always split as quad-trees, the transform is applied bottom-up, recursively.
+At each level, four DCs are combined into four Haar coefficients: one horizontal,
+one vertical, one diagonal, and one new DC representing a larger block size.
+The highest level (64x64) DC is predicted as a linear combination of the 
+neighboring superblock DC coefficients: left, top-left, top, and top-right.
 
 \subsection{Multi-Symbol Entropy Coder}
 
@@ -193,11 +205,27 @@ Q_\theta = \frac{\beta}{\hat{\gamma}}\ ,
 \end{equation}
 where $\beta = 1/(1-\alpha)$.
 
+The size of the codebook $K$ was determined through curve
+fitting~\cite{valin2015spie} to be
+\begin{equation}
+K = \frac{\hat{\gamma}\sin\hat{\theta}}{\beta}\sqrt{\frac{N+2}{2}}\ .
+\label{eq:K_nonrobust}
+\end{equation}
+The formulation in Eq.~(\ref{eq:K_nonrobust}) is not robust to packet loss when
+the gain is predicted (leading the decoder to obtain the wrong $K$ and decode
+the wrong number of symbols). Fortunately, by making the $\sin{\hat{\theta}}
+\simeq \hat{\theta}$ approximation and substituting $\hat{\theta} = 
+Q_\theta\hat{\tau}$, where $\tau$ is the angle quantization index, we obtain
+\begin{equation}
+K = \tau \sqrt{\frac{N+2}{2}}\ .
+\end{equation}
+
+
 \subsection{Chroma from Luma (CfL) Prediction}
 
-Although the use of $\mathrm{Y'C_bC_r}$ reduces the correlation across planes
+Although the use of $\mathrm{Y'C_BC_B}$ reduces the correlation across planes
 compared to RGB, there still exists a correlation between the chroma planes
-$\mathrm{C_b}$ and $\mathrm{C_r}$ and the luma plane Y'. Edges in chroma tend to
+$\mathrm{C_B}$ and $\mathrm{C_R}$ and the luma plane Y'. Edges in chroma tend to
 align very well with edges in luma with only the amount of contrast (gain) differing.
 Because of that property, PVQ makes it especially easy to predict
 chroma planes from the luma plane. Daala's chroma from luma (CfL)~\cite{egge2015spie}
