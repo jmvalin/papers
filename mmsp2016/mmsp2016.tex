@@ -237,6 +237,7 @@ that the gain of the chroma cannot be predicted from the gain of the luma.
 
 
 \subsection{Directional Deringing Filter}
+\label{sec:deringing}
 
 Like other transform codecs, Daala can cause ringing artifacts around edges.
 The directional deringing filter attempts to eliminate the ringing without
@@ -301,7 +302,28 @@ deringing filter that covers a total of 35~pixel taps.
 \section{Alliance for Open Media AV1 codec}
 \label{sec:AOM}
 
-Some of the
+Some of the techniques used in Daala are currently being considered for
+inclusion in the Alliance for Open Media (AOM) AV1 video codec. The
+deringing filter described in Section~\ref{sec:deringing} is already
+fully integrated in AV1 and has been shown to reduce bitrate by around 2\%
+at equal quality. 
+
+The multi-symbol entropy coder is also being evaluated. Using the piecewise
+integer mapping exactly as described in~\cite{stuiver1998piecewise} results
+in a bitrate overhead of around 1\%. However, we have experimented with
+better approximations that do not have such cost and assume that
+the denominator of the probabilities is a power of two.
+
+PVQ is early stages of experiments in AV1 and is by far the most invasive
+of the techniques under consideration, as it requires changes in some
+of the signaling, as well as the addition of a forward transform on the
+prediction itself. No results are available yet, but should PVQ be
+included in AV1, it would make it possible to also experiment with CfL.
+
+Lapped transforms and OBMC are \textit{not} being considered for inclusion
+in AV1. Both these techniques have far-reaching interactions with the
+other coding techniques and would essentially require a complete re-design
+of the codec. 
 
 \section{Results}
 \label{sec:Results}
