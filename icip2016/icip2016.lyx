@@ -847,7 +847,37 @@ url{https://arewecompressedyet.com/}
 
 \end_inset
 
- testing infrastructure.
+ testing infrastructure on the 
+\emph on
+subset1
+\emph default
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+url{https://people.xiph.org/~tterribe/daala/subset1-y4m.tar.gz}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ test set, composed of 50
+\begin_inset space ~
+\end_inset
+
+still images.
  Table
 \begin_inset space ~
 \end_inset
@@ -1159,7 +1189,11 @@ key "EggePCS"
 
 \end_inset
 
- and the current version.
+ and the current version on the 
+\emph on
+subset1
+\emph default
+ test set.
  Lower is better.
  
 \begin_inset CommandInset label
@@ -1417,7 +1451,11 @@ status open
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-Bjøntegaard-delta rate impact of the deringing filter.
+Bjøntegaard-delta rate impact of the deringing filter on the 
+\emph on
+subset1
+\emph default
+ test set.
  Lower is better.
 \begin_inset CommandInset label
 LatexCommand label
@@ -1605,7 +1643,7 @@ key "WebPWebsite"
 
 \end_inset
 
-, x264, and BPG
+, x264, and BPG (HEVC)
 \begin_inset space ~
 \end_inset
 
