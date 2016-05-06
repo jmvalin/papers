@@ -7,7 +7,8 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{units}
-\usepackage{cleveref}
+\usepackage[capitalise]{cleveref}
+\crefname{equation}{}{}
 \begin{document}
 
 \title{Daala: Building A Next-Generation Video Codec From Unconventional
@@ -212,7 +213,7 @@ fitting~\cite{valin2015spie} to be
 K = \frac{\hat{\gamma}\sin\hat{\theta}}{\beta}\sqrt{\frac{N+2}{2}}\ .
 \label{eq:K_nonrobust}
 \end{equation}
-The formulation in Eq.~(\ref{eq:K_nonrobust}) is not robust to packet loss when
+The formulation in~\cref{eq:K_nonrobust} is not robust to packet loss when
 the gain is predicted (leading the decoder to obtain the wrong $K$ and decode
 the wrong number of symbols). Fortunately, by making the $\sin{\hat{\theta}}
 \simeq \hat{\theta}$ approximation and substituting $\hat{\theta} = 
@@ -257,7 +258,7 @@ which can alternatively be written as
 \begin{equation}
 y\left(n\right)=x\left(n\right)+\frac{1}{\sum_{k}w_{k}}\sum_{k,k\neq0}w_{k}\left[x\left(n+k\right)-x\left(n\right)\right]\ .\label{eq:FIR2}
 \end{equation}
-The main advantage of expressing a filter in the form of Eq.~(\ref{eq:FIR2})
+The main advantage of expressing a filter in the form of~\cref{eq:FIR2}
 is that the normalization term $\frac{1}{\sum_{k}w_{k}}$ can be approximated
 relatively coarsely without affecting the unit gain for DC. This makes
 it easy to use small integers for the weights $w_{k}$.
@@ -268,7 +269,7 @@ blurring, the conditional replacement filter used in Daala excludes
 the signal taps $x\left(n+k\right)$ that would cause blurring and
 replaces them with $x\left(n\right)$ instead. This is determined
 by whether $x\left(n+k\right)$ differs from $x\left(n\right)$ by
-more than a threshold $T$. The FIR filter in Eq.~(\ref{eq:FIR2})
+more than a threshold $T$. The FIR filter in~\cref{eq:FIR2}
 then becomes a conditional replacement filter expressed as
 \begin{equation}
 y\left(n\right)=x\left(n\right)+\frac{1}{\sum_{k}w_{k}}\sum_{k,k\neq0}w_{k}R\left(x\left(n+k\right)-x\left(n\right),T\right)\ ,\label{eq:CRF}
