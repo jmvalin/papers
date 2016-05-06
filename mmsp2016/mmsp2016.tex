@@ -7,6 +7,7 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{units}
+\usepackage{cleveref}
 \begin{document}
 
 \title{Daala: Building A Next-Generation Video Codec From Unconventional
@@ -35,10 +36,10 @@ had not been applied to video coding before. While Daala is not yet
 a competitive codec on its own, some of the techniques it uses are
 currently being integrated in the Alliance For Open Media (AOM) AV1 codec.
 
-Section~\ref{sec:techniques} describes the non-traditional techniques used
-in Daala and Section~\ref{sec:AOM} discusses how these techniques fit within
+\cref{sec:techniques} describes the non-traditional techniques used
+in Daala and \cref{sec:AOM} discusses how these techniques fit within
 the new AV1 codec. We then present some results obtained with Daala and AV1
-in Section~\ref{sec:Results}.
+in \cref{sec:Results}.
 
 \section{Daala Techniques}
 \label{sec:techniques}
@@ -304,7 +305,7 @@ deringing filter that covers a total of 35~pixel taps.
 
 Some of the techniques used in Daala are currently being considered for
 inclusion in the Alliance for Open Media (AOM) AV1 video codec. The
-deringing filter described in Section~\ref{sec:deringing} is already
+deringing filter described in \cref{sec:deringing} is already
 fully integrated in AV1 and has been shown to reduce bitrate by around 2\%
 at equal quality. 
 
