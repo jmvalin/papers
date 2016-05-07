@@ -50,7 +50,7 @@ are very different from those typically used in most codecs. Most
 of these techniques have been fundamental to Daala since the initial
 stages of the project. In this description, a \textit{block} refers to
 a square transform block, whereas a \textit{superblock} refers to the
-largest area of a frame on which Daala can operate. Superblocks are 64x64
+largest area of a frame on which Daala can operate. Superblocks are $64\times 64$
 pixels in Daala. Also, vector variables are denoted in bold, and quantized
 variables are denoted with a hat.
 
@@ -74,7 +74,7 @@ up to the level of the corresponding superblock. Since Daala transform blocks
 are always split as quad-trees, the transform is applied bottom-up, recursively.
 At each level, four DCs are combined into four Haar coefficients: one horizontal,
 one vertical, one diagonal, and one new DC representing a larger block size.
-The highest level (64x64) DC is predicted as a linear combination of the 
+The highest level ($64\times 64$) DC is predicted as a linear combination of the 
 neighboring superblock DC coefficients: left, top-left, top, and top-right.
 
 \subsection{Multi-Symbol Entropy Coder}
@@ -178,7 +178,7 @@ In practice, the vectors $\mathbf{x}$ and $\mathbf{r}$ are transform
 coefficients rather than pixel values. This requires an extra forward DCT
 in both the encoder and the decoder since the input and the prediction need
 to be transformed separately. Only the AC coefficients are coded using PVQ
-and for blocks larger than 4x4, the AC coefficients are divided into multiple
+and for blocks larger than $4\times 4$, the AC coefficients are divided into multiple
 \textit{bands} where each band is coded separately. This makes it possible
 to control the contrast separately, based on octave and direction.
 
@@ -284,9 +284,9 @@ x & ,\ \left|x\right|<T\\
 
 To further reduce the risk of blurring the decoded image, the conditional
 replacement filter is applied along the main direction of the edges
-in each 8x8 block. The direction is determined based on the decoded image
-(no side information transmitted) by analyzing each 8x8 block as described
-in~\cite{ValinDeringing}. For each 8x8 block, the decoder determines which
+in each $8\times 8$ block. The direction is determined based on the decoded image
+(no side information transmitted) by analyzing each $8\times 8$ block as described
+in~\cite{ValinDeringing}. For each $8\times 8$ block, the decoder determines which
 of eight different directions best represents the content of the block.
 The search can be efficiently implemented in SIMD. To filter a pixel, a 7-tap
 conditional replacement filter is applied along the detected direction.
