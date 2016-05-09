@@ -56,16 +56,11 @@ largest area of a frame on which Daala can operate. Superblocks are $64\times 64
 pixels in Daala. Also, vector variables are denoted in bold, and quantized
 variables are denoted with a hat.
 
-\subsection{Lapping}
+\subsection{Lapped Transform}
 
-Daala uses lapped transforms~\cite{MalvarS89,Tran2003} rather than
-a regular DCT followed by a deblocking filter. 
+Rather than using a deblocking filter to counter blocking artifacts, Daala uses a combination of pre- and post-processing filters at block edges to reduce or eliminate blocking artifacts~\cite{DaedeDCC}. Known as a Time-Domain Lapped Transform (TDLT)~\cite{MalvarS89,tran2003}, the set of filters used in Daala allow for perfect reconstruction for lossy or lossless operations at up to 12-bits per pixel~\cite{EggePCS}.
 
-This reduces blocking artifacts but prevents the use of standard pixel-based
-intra-prediction techniques~\cite{DaedeDCC}. Instead, we use a simple
-frequency-domain intra predictor that only handles horizontal and
-vertical directions~\cite{EggePCS}. 
-
+The post-processing filter is applied over block boundaries on the frequency domain coefficients. Therefore, the reconstructed bordering pixels are not available for intra-prediction, as they depend on the block currently being encoded. As a result, intra prediction is achieved in the frequency domain using either the first row of coefficients from the block above or the first column from the block to the left~\cite{EggePCS}.
 
 \subsection{Haar DC}
 
