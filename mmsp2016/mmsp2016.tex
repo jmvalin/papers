@@ -80,6 +80,7 @@ The highest level ($64\times 64$) DC is predicted as a linear combination of the
 neighboring superblock DC coefficients: left, top-left, top, and top-right.
 
 \begin{figure}
+	\centering
 	\begin{minipage}[t]{0.49\columnwidth}
 		\includegraphics[width=\columnwidth]{block32_L0}
 		\subcaption{Original DC coefficients before Haar DC}
@@ -324,6 +325,20 @@ For example, for a 45-degree direction, the second filter would be
 applied horizontally. The combined effect of the two filters is a separable
 deringing filter that covers a total of 35~pixel taps.
 
+\begin{figure}
+	\centering
+	\begin{minipage}[t]{0.49\columnwidth}
+		\includegraphics[width=\columnwidth]{fruits_nodering_crop}
+		\includegraphics[width=\columnwidth]{bike_nodering_crop}
+		\subcaption{Without deringing filter}
+	\end{minipage}
+	\begin{minipage}[t]{0.49\columnwidth}
+		\includegraphics[width=\columnwidth]{fruits_dering_crop}
+		\includegraphics[width=\columnwidth]{bike_dering_crop}
+		\subcaption{With deringing filter}
+	\end{minipage}
+	\caption{Effect of the deringing filter on two images with sharp edges}
+\end{figure}
 
 \section{Alliance for Open Media AV1 codec}
 \label{sec:AOM}
