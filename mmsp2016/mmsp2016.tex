@@ -73,7 +73,8 @@ Since Daala lacks intra prediction, the DCs of all transforms within a superbloc
 are transform-coded with a 2D Haar wavelet.
 Also, DC coefficients are combined recursively using a Haar transform,
 up to the level of the corresponding superblock. Since Daala transform blocks
-are always split as quad-trees, the transform is applied bottom-up, recursively.
+are always split as quad-trees, the transform is applied bottom-up, recursively,
+as shown in \cref{fig:haardc}.
 At each level, four DCs are combined into four Haar coefficients: one horizontal,
 one vertical, one diagonal, and one new DC representing a larger block size.
 The highest level ($64\times 64$) DC is predicted as a linear combination of the 
@@ -99,7 +100,7 @@ neighboring superblock DC coefficients: left, top-left, top, and top-right.
 	\end{minipage}
 	\caption{Example of applying Haar DC over three levels on a $32\times 32$
 		sub-block. The process is applied all the way to $64\times 64$. Remaining DC
-		coefficients are shown in red}
+		coefficients are shown in red}\label{fig:haardc}
 \end{figure}
 
 \subsection{Multi-Symbol Entropy Coder}
@@ -325,6 +326,15 @@ For example, for a 45-degree direction, the second filter would be
 applied horizontally. The combined effect of the two filters is a separable
 deringing filter that covers a total of 35~pixel taps.
 
+The deringing filter only requires a minimal amount of signaling. A global threshold
+is set for the entire a frame, and one of six adjustment factors (including an
+\textit{off} setting) is signaled for each superblock. With entropy coding, the
+cost of the signaling generally averages 2~bits per superblock, or 128~bytes for
+a 1080p keyframe. For predicted frames, the deringing filter is not applied to
+block where no coefficients are coded and no adjustment is coded for superblocks
+where no coefficients are coded, further reducing the amount of signaling. The
+effect of the deringing filter at low bitrate is shown in \cref{fig:deringing}.
+
 \begin{figure}
 	\centering
 	\begin{minipage}[t]{0.49\columnwidth}
@@ -338,6 +348,7 @@ deringing filter that covers a total of 35~pixel taps.
 		\subcaption{With deringing filter}
 	\end{minipage}
 	\caption{Effect of the deringing filter on two images with sharp edges}
+	\label{fig:deringing}
 \end{figure}
 
 \section{Alliance for Open Media AV1 codec}
