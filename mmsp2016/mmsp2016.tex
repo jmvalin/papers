@@ -118,8 +118,10 @@ neighboring superblock DC coefficients: left, top-left, top, and top-right.
 		\caption{DC coefficients from $16\times 16$ sub-blocks are combined}
 	\end{subfigure}
 	\caption{Example of applying Haar DC over three levels on a $32\times 32$
-		sub-block. The process is applied all the way to $64\times 64$. Remaining DC
-		coefficients are shown in red}
+		sub-block, subdivided into transform blocks of $4 \times 4$, $8 \times 8$,
+		and $16 \times 16$. The Haar DC process is applied all the way to
+		$64\times 64$ superblocks. At each step, the remaining DC coefficients
+		are shown in red}
 	\label{fig:haardc}
 \end{figure}
 
@@ -263,9 +265,9 @@ The formulation in~\cref{eq:K_nonrobust} is not robust to packet loss when
 the gain is predicted (leading the decoder to obtain the wrong $K$ and decode
 the wrong number of symbols). Fortunately, by making the $\sin{\hat{\theta}}
 \simeq \hat{\theta}$ approximation and substituting $\hat{\theta} = 
-Q_\theta\hat{\tau}$, where $\tau$ is the angle quantization index, we obtain
+Q_\theta\hat{\tau}$, where $\hat{\tau}$ is the angle quantization index, we obtain
 \begin{equation}
-K = \tau \sqrt{\frac{N+2}{2}}\ .
+K = \hat{\tau} \sqrt{\frac{N+2}{2}}\ .
 \end{equation}
 
 
