@@ -66,6 +66,12 @@ intra-prediction techniques~\cite{DaedeDCC}. Instead, we use a simple
 frequency-domain intra predictor that only handles horizontal and
 vertical directions~\cite{EggePCS}. 
 
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\columnwidth]{basis4}
+	\caption{1D synthesis basis functions for the lapped $4 \times 4$ DCT.}
+	\label{fig: basis4}
+\end{figure}
 
 \subsection{Haar DC}
 
@@ -100,7 +106,7 @@ neighboring superblock DC coefficients: left, top-left, top, and top-right.
 	\end{minipage}
 	\caption{Example of applying Haar DC over three levels on a $32\times 32$
 		sub-block. The process is applied all the way to $64\times 64$. Remaining DC
-		coefficients are shown in red}\label{fig:haardc}
+		coefficients are shown in red.}\label{fig:haardc}
 \end{figure}
 
 \subsection{Multi-Symbol Entropy Coder}
@@ -347,7 +353,7 @@ effect of the deringing filter at low bitrate is shown in \cref{fig:deringing}.
 		\includegraphics[width=\columnwidth]{bike_dering_crop}
 		\subcaption{With deringing filter}
 	\end{minipage}
-	\caption{Effect of the deringing filter on two images with sharp edges}
+	\caption{Effect of the deringing filter on two images with sharp edges.}
 	\label{fig:deringing}
 \end{figure}
 
