@@ -35,14 +35,14 @@ patent-encumbered techniques used in most current video codecs. One
 of the goals of the Daala codec is to explore techniques that are
 very different from those typically used in most codecs. Some of
 these techniques are new to Daala, while others already existed, but
-had not been applied to video coding before. While Daala is not yet
+had not been applied to complete video codecs before. While Daala is not yet
 a competitive codec on its own, some of the techniques it uses are
 currently being integrated in the Alliance For Open Media (AOM) AV1 codec.
 
-\cref{sec:techniques} describes the non-traditional techniques used
-in Daala and \cref{sec:AOM} discusses how these techniques fit within
-the new AV1 codec. We then present some results obtained with Daala and AV1
-in \cref{sec:Results}.
+We start by explaining the unconventional technology used in Daala
+in \cref{sec:techniques}. We then discuss in \cref{sec:AOM} how some of
+these techniques can be used in the new AV1 codec. We present results
+obtained both with Daala and with AV1 in \cref{sec:Results}.
 
 \section{Daala Techniques}
 \label{sec:techniques}
@@ -50,11 +50,17 @@ in \cref{sec:Results}.
 One of the goals of the Daala codec is to explore techniques that
 are very different from those typically used in most codecs. Most
 of these techniques have been fundamental to Daala since the initial
-stages of the project. In this description, a \textit{block} refers to
-a square transform block, whereas a \textit{superblock} refers to the
-largest area of a frame on which Daala can operate. Superblocks are $64\times 64$
-pixels in Daala. Also, vector variables are denoted in bold, and quantized
-variables are denoted with a hat.
+stages of the project. Some of these techniques have forced very different
+decisions on the entire codec.
+
+In this description, a \textit{block} refers to
+a square transform block. Block sizes in Daala range from $4 \times 4$
+to $64 \times 64$, based on quad-tree recursive subdivisions. A
+\textit{superblock} refers to the largest area of a frame on which Daala
+can operate. Their size is $64\times 64$ in Daala. Vector variables are
+denoted in bold ($\mathbf{x}$) and their individual components are denoted
+with indices ($x_i$). Quantized variables are denoted with a hat ($\hat{x}$).
+Unless otherwise noted, $\|\cdot\|$ denotes the $L2$-norm of a vector.
 
 \subsection{Lapped Transforms}
 
