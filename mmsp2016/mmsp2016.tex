@@ -56,12 +56,25 @@ largest area of a frame on which Daala can operate. Superblocks are $64\times 64
 pixels in Daala. Also, vector variables are denoted in bold, and quantized
 variables are denoted with a hat.
 
-\subsection{Lapping}
+\subsection{Lapped Transforms}
 
-Daala uses lapped transforms~\cite{MalvarS89,Tran2003} rather than
-a regular DCT followed by a deblocking filter. 
+Rather than using a deblocking filter to attenuate blocking artifacts caused
+by quantizing DCT coefficients, Daala uses biorthogonal lapped
+transforms~\cite{MalvarS89,Tran2003}. The transform is structured such that
+a \textit{blocking} pre-filter is applied to the input image before computing
+the DCT and a \textit{deblocking} post-filter is applied on the reconstruction
+after the inverse DCT. Since the pre-filter is the inverse of the post-filter,
+there is no need for complex adaptation of the filter strength to avoid blurring
+details. As shown in \cref{fig:basis4}, the post-filter causes the basis functions
+to smoothly decay at block edges, avoiding blocking artifacts.
 
-This reduces blocking artifacts but prevents the use of standard pixel-based
+Although it is sometimes desirable to apply lapping such that it spans the entire
+width of the transform (making a $N \times N$ transform have $2N \times 2N$ support),
+it makes block size decision based on rate-distortion optimization~(RDO) intractable
+since any block size decision affects coding efficiency of neighboring blocks. For
+this reason, Daala uses 4-point lapping for all transform sizes.
+
+Lapping reduces blocking artifacts but prevents the use of standard pixel-based
 intra-prediction techniques~\cite{DaedeDCC}. Instead, we use a simple
 frequency-domain intra predictor that only handles horizontal and
 vertical directions~\cite{EggePCS}. 
@@ -70,7 +83,7 @@ vertical directions~\cite{EggePCS}.
 	\centering
 	\includegraphics[width=0.8\columnwidth]{basis4}
 	\caption{1D synthesis basis functions for the lapped $4 \times 4$ DCT.}
-	\label{fig: basis4}
+	\label{fig:basis4}
 \end{figure}
 
 \subsection{Haar DC}
@@ -344,12 +357,11 @@ effect of the deringing filter at low bitrate is shown in \cref{fig:deringing}.
 
 \begin{figure}
 	\centering
-	\begin{subfigure}[t]{0.49\columnwidth}
+	\begin{subfigure}[t]{0.5\columnwidth}
 		\includegraphics[width=\columnwidth]{fruits_nodering_crop}
 		\includegraphics[width=\columnwidth]{bike_nodering_crop}
 		\caption{Without deringing filter}
-	\end{subfigure}
-	\begin{subfigure}[t]{0.49\columnwidth}
+	\end{subfigure}\begin{subfigure}[t]{0.5\columnwidth}
 		\includegraphics[width=\columnwidth]{fruits_dering_crop}
 		\includegraphics[width=\columnwidth]{bike_dering_crop}
 		\caption{With deringing filter}
