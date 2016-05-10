@@ -74,10 +74,16 @@ it makes block size decision based on rate-distortion optimization~(RDO) intract
 since any block size decision affects coding efficiency of neighboring blocks. For
 this reason, Daala uses 4-point lapping for all transform sizes.
 
-Lapping reduces blocking artifacts but prevents the use of standard pixel-based
-intra-prediction techniques~\cite{DaedeDCC}. Instead, we use a simple
-frequency-domain intra predictor that only handles horizontal and
-vertical directions~\cite{EggePCS}. 
+One disadvantage of lapped transforms is that it complicates intra prediction.
+Because of the overlap, the pixels adjacent to the block being coded are not
+available for use in intra prediction, since they depend on the block being
+encoded. Instead of pixel-domain intra prediction, Daala uses a simple
+frequency-domain intra predictor that predicts horizontal and vertical directions
+by directly using the AC transform coefficients from the block above and the
+block to the left~\cite{EggePCS}. Some previous attempts at a more general
+frequency-domain intra predictor~\cite{fdintra-demo} was ultimately abandoned
+as it failed to achieve good results on large block sizes and mixed block sizes.
+
 
 \begin{figure}
 	\centering
