@@ -94,8 +94,8 @@ as it failed to achieve good results on large block sizes and mixed block sizes.
 \begin{figure}
 	\centering
 	\includegraphics[width=0.8\columnwidth]{basis4}
-	\caption{1D synthesis basis functions for the lapped $4 \times 4$ DCT.}
-	\label{fig:basis4}
+	\caption{1D synthesis basis functions for the lapped $4 \times 4$ DCT.\label{fig:basis4}}
+	
 \end{figure}
 
 \subsection{Haar DC}
@@ -133,8 +133,8 @@ neighboring superblock DC coefficients: left, top-left, top, and top-right.
 		sub-block, subdivided into transform blocks of $4 \times 4$, $8 \times 8$,
 		and $16 \times 16$. The Haar DC process is applied all the way to
 		$64\times 64$ superblocks. At each step, the remaining DC coefficients
-		are shown in red}
-	\label{fig:haardc}
+		are shown in red\label{fig:haardc}}
+	
 \end{figure}
 
 \subsection{Multi-Symbol Entropy Coder}
@@ -380,8 +380,7 @@ effect of the deringing filter at low bitrate is shown in \cref{fig:deringing}.
 		\includegraphics[width=\columnwidth]{bike_dering_crop}
 		\caption{With deringing filter}
 	\end{subfigure}
-	\caption{Effect of the deringing filter on two images with sharp edges.}
-	\label{fig:deringing}
+	\caption{Effect of the deringing filter on two images with sharp edges.\label{fig:deringing}}
 \end{figure}
 
 \section{Alliance for Open Media AV1 codec}
