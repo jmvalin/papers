@@ -69,7 +69,7 @@ by quantizing DCT coefficients, Daala uses biorthogonal lapped
 transforms~\cite{MalvarS89,Tran2003}. The transform is structured such that
 a \textit{blocking} pre-filter is applied to the input image before computing
 the DCT and a \textit{deblocking} post-filter is applied on the reconstruction
-after the inverse DCT. Since the pre-filter is the inverse of the post-filter,
+after the inverse DCT\@. Since the pre-filter is the inverse of the post-filter,
 there is no need for complex adaptation of the filter strength to avoid blurring
 details. As shown in \cref{fig:basis4}, the post-filter causes the basis functions
 to smoothly decay at block edges, avoiding blocking artifacts.
@@ -292,7 +292,7 @@ align very well with edges in luma with only the amount of contrast (gain) diffe
 Because of that property, PVQ makes it especially easy to predict
 chroma planes from the luma plane. Daala's chroma from luma (CfL)~\cite{egge2015spie}
 prediction directly uses the luma transform coefficients as the prediction vector
-$\mathbf{r}$ for coding the chroma coefficients with PVQ. The main difference compared
+$\mathbf{r}$ for coding the chroma coefficients with PVQ\@. The main difference compared
 to the normal way of using PVQ is that a sign needs to be coded for the prediction
 (since the luma plane and chroma plane coefficients may be negatively correlated) and
 that the gain of the chroma cannot be predicted from the gain of the luma.
@@ -320,7 +320,7 @@ y\left(n\right)=x\left(n\right)+\frac{1}{\sum_{k}w_{k}}\sum_{k,k\neq0}w_{k}\left
 \end{equation}
 The main advantage of expressing a filter in the form of~\cref{eq:FIR2}
 is that the normalization term $\frac{1}{\sum_{k}w_{k}}$ can be approximated
-relatively coarsely without affecting the unit gain for DC. This makes
+relatively coarsely without affecting the unit gain for DC\@. This makes
 it easy to use small integers for the weights $w_{k}$.
 
 The disadvantage of linear filters for removing ringing artifacts
@@ -348,7 +348,7 @@ in each $8\times 8$ block. The direction is determined based on the decoded imag
 (no side information transmitted) by analyzing each $8\times 8$ block as described
 in~\cite{ValinDeringing}. For each $8\times 8$ block, the decoder determines which
 of eight different directions best represents the content of the block.
-The search can be efficiently implemented in SIMD. To filter a pixel, a 7-tap
+The search can be efficiently implemented in SIMD\@. To filter a pixel, a 7-tap
 conditional replacement filter is applied along the detected direction.
 The process is repeated for each pixel in each block being filtered.
 
