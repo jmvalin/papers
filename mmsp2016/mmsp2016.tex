@@ -386,11 +386,18 @@ effect of the deringing filter at low bitrate is shown in \cref{fig:deringing}.
 \section{Alliance for Open Media AV1 codec}
 \label{sec:AOM}
 
-Some of the techniques used in Daala are currently being considered for
-inclusion in the Alliance for Open Media (AOM) AV1 video codec. The
-deringing filter described in \cref{sec:deringing} is already
+The recently-formed Alliance for Open Media (AOM) is currently specifying
+AV1, a royalty-free video codec. The initial development is based on
+technology from three existing codecs: Google's VP9~\cite{VP9Spec} codec,
+Cisco's Thor~\cite{ThorDraft} codec, as well as the Daala codec presented
+here. For this reason, some of the techniques used in Daala are currently
+being considered for inclusion in AV1.
+
+The deringing filter described in \cref{sec:deringing} is already
 fully integrated in AV1 and has been shown to reduce bitrate by around 2\%
-at equal quality. 
+at equal quality. AV1 also includes Thor's constrained lowpass
+filter~(CLPF)~\cite{CLPFDraft} that attenuates ringing, but with a more
+limited effect and a lower complexity than the Daala deringing filter.
 
 The multi-symbol entropy coder is also being evaluated. Using the piecewise
 integer mapping exactly as described in~\cite{stuiver1998piecewise} results
@@ -399,8 +406,8 @@ better approximations that do not have such cost and assume that
 the denominator of the probabilities is a power of two.
 
 PVQ is early stages of experiments in AV1 and is by far the most invasive
-of the techniques under consideration, as it requires changes in some
-of the signaling, as well as the addition of a forward transform on the
+of the Daala techniques under consideration in AV1, as it requires many changes
+in the signaling, as well as the addition of a forward transform on the
 prediction itself. No results are available yet, but should PVQ be
 included in AV1, it would make it possible to also experiment with CfL.
 
