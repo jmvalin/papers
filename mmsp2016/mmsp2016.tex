@@ -35,7 +35,7 @@ patent-encumbered techniques used in most current video codecs. One
 of the goals of the Daala codec is to explore techniques that are
 very different from those typically used in most codecs. Some of
 these techniques are new to Daala, while others already existed, but
-had not been applied to complete video codecs before. While Daala is not yet
+were not used in popular video coding standards. While Daala is not yet
 a competitive codec on its own, some of the techniques it uses are
 currently being integrated in the Alliance For Open Media (AOM) AV1 codec.
 
@@ -53,8 +53,7 @@ of these techniques have been fundamental to Daala since the initial
 stages of the project. Some of these techniques have forced very different
 decisions on the entire codec.
 
-In this description, a \textit{block} refers to
-a square transform block. Block sizes in Daala range from $4 \times 4$
+Transform block sizes in Daala range from $4 \times 4$
 to $64 \times 64$, based on quad-tree recursive subdivisions. A
 \textit{superblock} refers to the largest area of a frame on which Daala
 can operate. Their size is $64\times 64$ in Daala. Vector variables are
@@ -67,74 +66,77 @@ Unless otherwise noted, $\|\cdot\|$ denotes the $L2$-norm of a vector.
 Rather than using a deblocking filter to attenuate blocking artifacts caused
 by quantizing DCT coefficients, Daala uses biorthogonal lapped
 transforms~\cite{MalvarS89,Tran2003}. The transform is structured such that
-a \textit{blocking} pre-filter is applied to the input image before computing
+a \textit{decorrelating} pre-filter is applied to the input image before computing
 the DCT and a \textit{deblocking} post-filter is applied on the reconstruction
 after the inverse DCT\@. Since the pre-filter is the inverse of the post-filter,
 there is no need for complex adaptation of the filter strength to avoid blurring
 details. As shown in \cref{fig:basis4}, the post-filter causes the basis functions
-to smoothly decay at block edges, avoiding blocking artifacts.
+to smoothly decay at transform block edges, avoiding blocking artifacts.
 
-Although it is sometimes desirable to apply lapping such that it spans the entire
-width of the transform (making a $N \times N$ transform have $2N \times 2N$ support),
-it makes block size decision based on rate-distortion optimization~(RDO) intractable
-since any block size decision affects coding efficiency of neighboring blocks. For
+Although applying lapping that spans the entire width of the transform is
+sometimes desirable (making an $N \times N$ transform have $2N \times 2N$ support),
+it makes block size decision using rate-distortion optimization~(RDO) intractable,
+since any choice of block size affects the coding efficiency of neighboring blocks. For
 this reason, Daala uses 4-point lapping for all transform sizes.
 
 One disadvantage of lapped transforms is that it complicates intra prediction.
-Because of the overlap, the pixels adjacent to the block being coded are not
-available for use in intra prediction, since they depend on the block being
-encoded. Instead of pixel-domain intra prediction, Daala uses a simple
-frequency-domain intra predictor that predicts horizontal and vertical directions
-by directly using the AC transform coefficients from the block above and the
-block to the left~\cite{EggePCS}. Some previous attempts at a more general
-frequency-domain intra predictor~\cite{fdintra-demo} was ultimately abandoned
-as it failed to achieve good results on large block sizes and mixed block sizes.
+Because of the overlap, the pixels adjacent to the block being predicted are not
+available for use in intra prediction, since they cannot be reconstructed
+without quantized transform coefficients from the block being predicted.
+Instead of pixel-domain intra prediction, Daala uses a simple
+frequency-domain intra predictor. We predicts AC coefficients along horizontal
+and vertical directions by directly copying a row or column of AC
+coefficients from the block above and the block to the left~\cite{EggePCS}.
+Some previous attempts at a more general
+frequency-domain intra predictor~\cite{fdintra-demo} were ultimately abandoned,
+as they failed to achieve good results with tractable complexity on large block
+sizes and mixed block sizes.
 
 
 \begin{figure}
-	\centering
-	\includegraphics[width=0.8\columnwidth]{basis4}
-	\caption{1D synthesis basis functions for the lapped $4 \times 4$ DCT.\label{fig:basis4}}
-	
+\centering
+\includegraphics[width=0.8\columnwidth]{basis4}
+\caption{1D synthesis basis functions for the lapped $4 \times 4$ DCT.\label{fig:basis4}}
+
 \end{figure}
 
 \subsection{Haar DC}
 
-Since Daala lacks intra prediction, the DCs of all transforms within a superblock
-are transform-coded with a 2D Haar wavelet.
-Also, DC coefficients are combined recursively using a Haar transform,
-up to the level of the corresponding superblock. Since Daala transform blocks
-are always split as quad-trees, the transform is applied bottom-up, recursively,
+Instead of using intra prediction for DC coefficients, the DC coefficients
+within a superblock are further transformed with a 2D Haar wavelet.
+Since Daala transform blocks are always split as quad-trees, the transform is
+applied bottom-up, recursively, up to the level of the corresponding superblock,
 as shown in \cref{fig:haardc}.
 At each level, four DCs are combined into four Haar coefficients: one horizontal,
-one vertical, one diagonal, and one new DC representing a larger block size.
-The highest level ($64\times 64$) DC is predicted as a linear combination of the 
+one vertical, one diagonal, and one new DC corresponding to a larger block size.
+The highest level ($64\times 64$) DC is predicted as a linear combination of the
 neighboring superblock DC coefficients: left, top-left, top, and top-right.
+TODO: We should specify what that linear combination is.
+TODO: This doesn't describe the hgrad/vgrad stuff at all, and should.
 
 \begin{figure}
-	\centering
-	\begin{subfigure}[t]{0.49\columnwidth}
-		\includegraphics[width=\columnwidth]{block32_L0}
-		\caption{Original DC coefficients before Haar DC}
-	\end{subfigure}
-	\begin{subfigure}[t]{0.49\columnwidth}
-		\includegraphics[width=\columnwidth]{block32_L1}
-		\caption{DC coefficients from $4\times 4$ blocks are combined}
-	\end{subfigure}
-	\begin{subfigure}[t]{0.49\columnwidth}
-		\includegraphics[width=\columnwidth]{block32_L2}
-		\caption{DC coefficients from $8\times 8$ sub-blocks are combined}
-	\end{subfigure}
-	\begin{subfigure}[t]{0.49\columnwidth}
-		\includegraphics[width=\columnwidth]{block32_L3}
-		\caption{DC coefficients from $16\times 16$ sub-blocks are combined}
-	\end{subfigure}
-	\caption{Example of applying Haar DC over three levels on a $32\times 32$
-		sub-block, subdivided into transform blocks of $4 \times 4$, $8 \times 8$,
-		and $16 \times 16$. The Haar DC process is applied all the way to
-		$64\times 64$ superblocks. At each step, the remaining DC coefficients
-		are shown in red\label{fig:haardc}}
-	
+\centering
+\begin{subfigure}[t]{0.49\columnwidth}
+\includegraphics[width=\columnwidth]{block32_L0}
+\caption{Original DC coefficients before Haar DC}
+\end{subfigure}
+\begin{subfigure}[t]{0.49\columnwidth}
+\includegraphics[width=\columnwidth]{block32_L1}
+\caption{DC coefficients from $8\times 8$ blocks are combined}
+\end{subfigure}
+\begin{subfigure}[t]{0.49\columnwidth}
+\includegraphics[width=\columnwidth]{block32_L2}
+\caption{DC coefficients from $16\times 16$ sub-blocks are combined}
+\end{subfigure}
+\begin{subfigure}[t]{0.49\columnwidth}
+\includegraphics[width=\columnwidth]{block32_L3}
+\caption{DC coefficients from $32\times 32$ sub-blocks are combined}
+\end{subfigure}
+\caption{Example of applying Haar DC over three levels on a $64\times 64$
+superblock, subdivided into transform blocks of $8 \times 8$, $16 \times 16$,
+and $32 \times 32$. At each step, the remaining DC coefficients
+are shown in red\label{fig:haardc}}
+
 \end{figure}
 
 \subsection{Multi-Symbol Entropy Coder}
@@ -143,17 +145,67 @@ Most recent video codecs encode information using binary arithmetic
 coding, meaning that each symbol can only take two values. The Daala
 range coder supports up to 16 values per symbol, making it possible
 to encode fewer symbols~\cite{derfTools}. This is equivalent to
-coding up to four binary values in parallel and reduces serial dependencies. 
+coding up to four binary values in parallel and reduces serial dependencies,
+allowing hardware implementations to use lower clock rates, and thus less
+power.
 
-To achieve this, Daala uses a multiply-free range coder approximation~\cite{stuiver1998piecewise}. 
+The range coder itself is based on a multiply-free approximation presented
+in~\cite{stuiver1998piecewise}. The original approximation overestimates
+probabilities for symbols at the end of the alphabet, and underestimates
+probabilities at the beginning of the alphabet. In Daala, this is done the
+other way around, since $0$ is frequently the most probable symbol.
+Overestimating its probability leads to lower approximation overhead than
+underestimating it.
 
+The approximation replaces the multiplication and division of a traditional
+arithmetic coder with a subtraction, a minimum operation, and an addition. This
+allows it to work with any input probability distribution, without requiring
+that its total be normalized to a power of two. That lets Daala use traditional
+frequency counts to model probabilities, instead of having to extend the
+table-based schemes usually used by binary coders to larger alphabet sizes.
+Probabilities can typically be updated with just one or two SIMD instructions
+in software, and are similarly cheap to update in parallel in hardware. The
+overall cost of the approximation is a bitrate of around $1\%$ in practice,
+which is comparable to CABAC.
+
+We are currently exploring approaches for reducing this overhead without
+sacrificing throughput or modeling efficiency with hardware implementers in the
+AOM.
 
 \subsection{Overlapped Block Motion Compensation}
 
-Because of the use of lapping we need a way to avoid blocking artifacts
-in the prediction. For this we use overlapped block motion compensation
-(OBMC)~\cite{OBMC}.
+Because hard block edges are expensive to code with lapped transforms, we
+want to avoid creating blocking artifacts in the motion-compensated
+prediction. For this we use overlapped block motion compensation
+(OBMC)~\cite{OBMC}. This is done on an adaptive grid of Motion Compensation
+(MC) blocks ranging from $8\times 8$ up to $64\times 64$, in order to scale to
+high-resolution content. This grid is completely independent of the transform
+blocks, and neither imposes any constraints on the sizes of the other. We also
+experimented with $4\times 4$ blocks, but they were rarely used in practice,
+and actually caused a small quality regression at equal bitrate with the
+encoder used at the time.
 
+The use of variable-sized MC blocks requires a blending scheme that maintains
+continuity between neighboring regions of different sizes. One approach, used
+by codecs like Dirac~\cite{Dirac}, is to fix the overlap size at the largest
+allowed by the smallest blocks (8~pixels, in this case). This makes a large
+block equivalent to a group of smaller blocks with the same motion vector.
+However, this can create low-passing artifacts in a predictable grid pattern.
+These can be visually annoying, but require many bits to correct because of
+their locality. Zhang \textit{et al.} showed that splitting large blocks,
+but only as far as necessary to prevent their blending windows from
+overlapping more than one neighboring block, improved quality~\cite{ZAS98}.
+However, they implemented this as a post-process to a non-overlapped
+block-based motion search, and did not incorporate RDO.
+
+Instead, Daala structures its grid as a 4-8 mesh~\cite{DWSMAM97} to ensure the
+sizes of neighboring MC blocks differ by no more than a factor of two. This
+makes it easy to design OBMC blending windows that both span an entire block
+and ensure continuity across block size changes. Although R-D optimal block
+size decisions with this data structure are still NP-hard, there is a fast
+dynamic programming approximation that achieves good results in
+practice~\cite{Bal01}. The details of the 4-8 grid structure, the blending
+windows, and the dynamic programming algorithm are outlined in~\cite{OBMC}.
 
 \subsection{Perceptual Vector Quantization}
 
@@ -177,7 +229,7 @@ between the prediction and the input, conserving the energy of that
 difference would be perceptually meaningless.
 
 Rather than attempting to encode the difference, the prediction produces
-a Householder reflection that makes the input easier to encode. Let 
+a Householder reflection that makes the input easier to encode. Let
 $\mathbf{x}$ be the input and $\mathbf{r}$ be the prediction, we construct
  a Householder reflection plane
 \begin{equation}
@@ -238,7 +290,7 @@ In practice, the vectors $\mathbf{x}$ and $\mathbf{r}$ are transform
 coefficients rather than pixel values. This requires an extra forward DCT
 in both the encoder and the decoder since the input and the prediction need
 to be transformed separately. Only the AC coefficients are coded using PVQ
-and for blocks larger than $4\times 4$, the AC coefficients are divided into multiple
+and for transform blocks larger than $4\times 4$, the AC coefficients are divided into multiple
 \textit{bands} where each band is coded separately. This makes it possible
 to control the contrast separately, based on octave and direction.
 
@@ -276,7 +328,7 @@ K = \frac{\hat{\gamma}\sin\hat{\theta}}{\beta}\sqrt{\frac{N+2}{2}}\ .
 The formulation in~\cref{eq:K_nonrobust} is not robust to packet loss when
 the gain is predicted (leading the decoder to obtain the wrong $K$ and decode
 the wrong number of symbols). Fortunately, by making the $\sin{\hat{\theta}}
-\simeq \hat{\theta}$ approximation and substituting $\hat{\theta} = 
+\simeq \hat{\theta}$ approximation and substituting $\hat{\theta} =
 Q_\theta\hat{\tau}$, where $\hat{\tau}$ is the angle quantization index, we obtain
 \begin{equation}
 K = \hat{\tau} \sqrt{\frac{N+2}{2}}\ .
@@ -344,7 +396,7 @@ x & ,\ \left|x\right|<T\\
 
 To further reduce the risk of blurring the decoded image, the conditional
 replacement filter is applied along the main direction of the edges
-in each $8\times 8$ block. The direction is determined based on the decoded image
+in each $8\times 8$ transform block. The direction is determined based on the decoded image
 (no side information transmitted) by analyzing each $8\times 8$ block as described
 in~\cite{ValinDeringing}. For each $8\times 8$ block, the decoder determines which
 of eight different directions best represents the content of the block.
@@ -370,17 +422,17 @@ where no coefficients are coded, further reducing the amount of signaling. The
 effect of the deringing filter at low bitrate is shown in \cref{fig:deringing}.
 
 \begin{figure}
-	\centering
-	\begin{subfigure}[t]{0.5\columnwidth}
-		\includegraphics[width=\columnwidth]{fruits_nodering_crop}
-		\includegraphics[width=\columnwidth]{bike_nodering_crop}
-		\caption{Without deringing filter}
-	\end{subfigure}\begin{subfigure}[t]{0.5\columnwidth}
-		\includegraphics[width=\columnwidth]{fruits_dering_crop}
-		\includegraphics[width=\columnwidth]{bike_dering_crop}
-		\caption{With deringing filter}
-	\end{subfigure}
-	\caption{Effect of the deringing filter on two images with sharp edges.\label{fig:deringing}}
+\centering
+\begin{subfigure}[t]{0.5\columnwidth}
+\includegraphics[width=\columnwidth]{fruits_nodering_crop}
+\includegraphics[width=\columnwidth]{bike_nodering_crop}
+\caption{Without deringing filter}
+\end{subfigure}\begin{subfigure}[t]{0.5\columnwidth}
+\includegraphics[width=\columnwidth]{fruits_dering_crop}
+\includegraphics[width=\columnwidth]{bike_dering_crop}
+\caption{With deringing filter}
+\end{subfigure}
+\caption{Effect of the deringing filter on two images with sharp edges.\label{fig:deringing}}
 \end{figure}
 
 \section{Alliance for Open Media AV1 codec}
@@ -414,7 +466,7 @@ included in AV1, it would make it possible to also experiment with CfL.
 Lapped transforms and OBMC are \textit{not} being considered for inclusion
 in AV1. Both these techniques have far-reaching interactions with the
 other coding techniques and would essentially require a complete re-design
-of the codec. 
+of the codec.
 
 \section{Results}
 \label{sec:Results}
