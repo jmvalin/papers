@@ -38,7 +38,7 @@ very different from those typically used in most codecs. Some of
 these techniques are new to Daala, while others already existed, but
 were not used in popular video coding standards. While Daala is not yet
 a competitive codec on its own, some of the techniques it uses are
-currently being integrated in the Alliance For Open Media (AOM) AV1 codec.
+currently being integrated in the Alliance for Open Media (AOM) AV1 codec.
 
 We start by explaining the unconventional technology used in Daala
 in \cref{sec:techniques}. We then discuss in \cref{sec:AOM} how some of
@@ -85,7 +85,7 @@ Because of the overlap, the pixels adjacent to the block being predicted are not
 available for use in intra prediction, since they cannot be reconstructed
 without quantized transform coefficients from the block being predicted.
 Instead of pixel-domain intra prediction, Daala uses a simple
-frequency-domain intra predictor. We predicts AC coefficients along horizontal
+frequency-domain intra predictor. We predict AC coefficients along horizontal
 and vertical directions by directly copying a row or column of AC
 coefficients from the block above and the block to the left~\cite{EggePCS}.
 Some previous attempts at a more general
@@ -93,12 +93,10 @@ frequency-domain intra predictor~\cite{fdintra-demo} were ultimately abandoned,
 as they failed to achieve good results with tractable complexity on large block
 sizes and mixed block sizes.
 
-
 \begin{figure}
 \centering
 \includegraphics[width=0.8\columnwidth]{basis4}
 \caption{1D synthesis basis functions for the lapped $4 \times 4$ DCT.\label{fig:basis4}}
-
 \end{figure}
 
 \subsection{Haar DC}
