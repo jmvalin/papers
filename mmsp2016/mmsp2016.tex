@@ -519,10 +519,9 @@ on the \texttt{ntt-short-1} test set.
 Four different objective metrics are used for the comparison: PSNR,
 PSHR-HVS-M~\cite{PSHRHVSM}, SSIM, and Fast-SSIM~\cite{FastSSIM}. We compare
 Daala\footnote{Git version d55fff01 from April 25th, 2016 with command-line options: -k 1000 -v}
-to the AV1 encoder\footnote{Git version 337b23a5 from April 7th, 2016 with command-line options: --ivf --frame-parallel=0 --tile-columns=0 --auto-alt-ref=2 --cpu-used=0 --passes=2 --threads=1 --kf-min-dist=1000 --kf-max-dist=1000 --lag-in-frames=25 --end-usage=q --cq-level=}, to the x264 H.264
+to the AV1 encoder\footnote{Git version 337b23a5 from April 7th, 2016 with deringing enabled and command-line options: --ivf --frame-parallel=0 --tile-columns=0 --auto-alt-ref=2 --cpu-used=0 --passes=2 --threads=1 --kf-min-dist=1000 --kf-max-dist=1000 --lag-in-frames=25 --end-usage=q --cq-level=}, to the x264 H.264
 encoder\footnote{Command-line options: --preset placebo --min-keyint 1000 --keyint 1000 --no-scenecut --crf=},
 and to the x265 HEVC encoder\footnote{Version 1.6 with command-line options: --preset slow --frame-threads 1 --min-keyint 1000 --keyint 1000 --no-scenecut --crf=}.
-
 
 The results in \cref{fig:metrics} show that Daala is generally better than
 H.264, but worse than HEVC and AV1. From the developers' informal
