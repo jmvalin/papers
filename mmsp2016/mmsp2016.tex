@@ -495,17 +495,17 @@ lack of pixel-domain prediction, it also not currently being considered for AV1.
 \label{sec:Results}
 
 \begin{figure*}
-	\centering
-	\begin{subfigure}[t]{0.5\textwidth}
-		\includegraphics[width=\columnwidth]{psnr.eps}
-		\caption{PSNR}
-	\end{subfigure}\begin{subfigure}[t]{0.5\textwidth}
-	\includegraphics[width=\columnwidth]{psnrhvsm.eps}
-	\caption{PSNR-HVS-M}
+\centering
+\begin{subfigure}[t]{0.5\textwidth}
+\includegraphics[width=\columnwidth]{psnr.eps}
+\caption{PSNR}
+\end{subfigure}\begin{subfigure}[t]{0.5\textwidth}
+\includegraphics[width=\columnwidth]{psnrhvsm.eps}
+\caption{PSNR-HVS-M}\label{fig:psnrhvsm}
 \end{subfigure}
 \begin{subfigure}[t]{0.5\textwidth}
-	\includegraphics[width=\columnwidth]{ssim.eps}
-	\caption{SSIM}
+\includegraphics[width=\columnwidth]{ssim.eps}
+\caption{SSIM}
 \end{subfigure}\begin{subfigure}[t]{0.5\textwidth}
 \includegraphics[width=\columnwidth]{fastssim.eps}
 \caption{FAST-SSIM}
@@ -514,12 +514,24 @@ lack of pixel-domain prediction, it also not currently being considered for AV1.
 \end{figure*}
 
 Testing of Daala is performed on the Are We Compressed 
-Yet?\footnote{\url{https://arewecompressedyet.com/}} testing infrastructure.
+Yet?\footnote{\url{https://arewecompressedyet.com/}} testing infrastructure
+on the \texttt{ntt-short-1} test set.
 Four different objective metrics are used for the comparison: PSNR,
 PSHR-HVS-M~\cite{PSHRHVSM}, SSIM, and Fast-SSIM~\cite{FastSSIM}. We compare
-Daala\footnote{Command-line options: -k 1000 -v} to the AV1 encoder\footnote{Command-line options: --ivf --frame-parallel=0 --tile-columns=0 --auto-alt-ref=2 --cpu-used=0 --passes=2 --threads=1 --kf-min-dist=1000 --kf-max-dist=1000 --lag-in-frames=25 --end-usage=q --cq-level=}, to the x264 H.264
+Daala\footnote{Git version d55fff01 from April 25th, 2016 with command-line options: -k 1000 -v}
+to the AV1 encoder\footnote{Git version 337b23a5 from April 7th, 2016 with command-line options: --ivf --frame-parallel=0 --tile-columns=0 --auto-alt-ref=2 --cpu-used=0 --passes=2 --threads=1 --kf-min-dist=1000 --kf-max-dist=1000 --lag-in-frames=25 --end-usage=q --cq-level=}, to the x264 H.264
 encoder\footnote{Command-line options: --preset placebo --min-keyint 1000 --keyint 1000 --no-scenecut --crf=},
-and to the x265 HEVC encoder\footnote{Command-line options: --preset slow --frame-threads 1 --min-keyint 1000 --keyint 1000 --no-scenecut --crf=}.
+and to the x265 HEVC encoder\footnote{Version 1.6 with command-line options: --preset slow --frame-threads 1 --min-keyint 1000 --keyint 1000 --no-scenecut --crf=}.
+
+
+The results in \cref{fig:metrics} show that Daala is generally better than
+H.264, but worse than HEVC and AV1. From the developers' informal
+evaluation, the subjective performance of Daala is close to what the PSNR\-HVS\-M
+results show in \cref{fig:psnrhvsm}. Qualitatively, the Daala artifacts tend to differ
+greatly from most other video codecs. Daala tends to perform more poorly on sharp
+details and edges, while retaining more of the smooth texture. This is in part due
+to the PVQ activity masking, but the behavior is present even when activity masking
+is not used.
 
 
 \bibliographystyle{IEEEtran}
