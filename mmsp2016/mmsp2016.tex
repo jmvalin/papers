@@ -280,10 +280,9 @@ where the number of \textit{pulses} $K$ controls the size of the codebook.
 The encoder quantizes $g$ and $\theta$ and encodes them in the bitstream along
 with the integer vector $\mathbf{y}$ (except for $y_m=0$). The codebook
 size $K$ is determined only from $g$ and $\theta$ and does not need to be
-transmitted. Since the decoder has access to the prediction vector $\mathbf{r}$
-and the reflection vector $\mathbf{v}$, the values $m$ and $s$ also do not
-need to
-be transmitted. In total, there are $N-2$ degrees of freedom to code in
+transmitted. Since the decoder has access to the prediction vector $\mathbf{r}$,
+it can compute the reflection vector $\mathbf{v}$ without the need to transmit
+$m$ and $s$. In total, there are $N-2$ degrees of freedom to code in
 $\mathbf{y}$, with two more for $g$ and $\theta$, so the total is still
 $N$ degrees of freedom. The main difference however is that two of the
 coded values have a perceptual meaning: $g$ is the amount of contrast and
