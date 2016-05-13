@@ -29,7 +29,10 @@ jmvalin@jmvalin.ca
 Daala is a new royalty-free video codec that attempts to compete with
 state-of-the-art royalty-bearing codecs. The main strategy for achieving this
 goal is to use technology that is as different as possible from traditional
-approaches used in video coding.
+approaches used in video coding. In this paper, we describe the technology
+behind Daala and discuss where it fits in the newly created AV1 codec. We
+also present results that show that Daala is approaching the performance
+level or more mature, state-of-the art video codecs. 
 \end{abstract}
 
 
@@ -524,7 +527,7 @@ encoder\footnote{Command-line options: --preset placebo --min-keyint 1000 --keyi
 and to the x265 HEVC encoder\footnote{Version 1.6 with command-line options: --preset slow --frame-threads 1 --min-keyint 1000 --keyint 1000 --no-scenecut --crf=}.
 
 The results in \cref{fig:metrics} show that Daala is generally better than
-H.264, but worse than HEVC and AV1. From the developers' informal
+H.264, ans slightly worse than HEVC and AV1. From the developers' informal
 evaluation, the subjective performance of Daala is close to what the PSNR\-HVS\-M
 results show in \cref{fig:psnrhvsm}. Qualitatively, the Daala artifacts tend to differ
 greatly from most other video codecs. Daala tends to perform more poorly on sharp
@@ -533,9 +536,9 @@ to the PVQ activity masking, but the behavior is present even when activity mask
 is not used.
 
 Considering that most of the technology used in Daala is either new or unproven
-in the context where it is being used, we consider these results to be
+in the context of video codecs, we consider these results to be
 encouraging. Some of the techniques presented in this paper should make their
-way into the AV1 codec, with others will require more time to mature before
+way into the AV1 codec, while others will require more time to mature before
 being used in a video coding standard.
 
 \bibliographystyle{IEEEtran}
