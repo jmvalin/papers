@@ -166,11 +166,11 @@ table-based schemes usually used by binary coders to larger alphabet sizes.
 Probabilities can typically be updated with just one or two SIMD instructions
 in software, and are similarly cheap to update in parallel in hardware. The
 overall cost of the approximation is a bitrate of around $1\%$ in practice,
-which is comparable to CABAC.
+which is comparable to CABAC\@.
 
 We are currently exploring approaches for reducing this overhead without
 sacrificing throughput or modeling efficiency with hardware implementers in the
-AOM.
+AOM\@.
 
 \subsection{Overlapped Block Motion Compensation}
 
@@ -196,7 +196,7 @@ their locality. Zhang \textit{et al.} showed that splitting large blocks,
 but only as far as necessary to prevent their blending windows from
 overlapping more than one neighboring block, improved quality~\cite{ZAS98}.
 However, they implemented this as a post-process to a non-overlapped
-block-based motion search, and did not incorporate RDO.
+block-based motion search, and did not incorporate RDO\@.
 
 Instead, Daala structures its grid as a 4-8 mesh~\cite{DWSMAM97} to ensure the
 sizes of neighboring MC blocks differ by no more than a factor of two. This
