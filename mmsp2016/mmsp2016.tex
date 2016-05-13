@@ -491,16 +491,33 @@ of the codec. Considering that Haar~DC (\cref{sec:HaarDC}) is mostly
 needed to compensate for the
 lack of pixel-domain prediction, it also not currently being considered for AV1.
 
-\section{Results}
+\section{Results and Discussion}
 \label{sec:Results}
+
+\begin{figure*}
+	\centering
+	\begin{subfigure}[t]{0.5\textwidth}
+		\includegraphics[width=\columnwidth]{psnr.eps}
+		\caption{PSNR}
+	\end{subfigure}\begin{subfigure}[t]{0.5\textwidth}
+	\includegraphics[width=\columnwidth]{psnrhvsm.eps}
+	\caption{PSNR-HVS-M}
+\end{subfigure}
+\begin{subfigure}[t]{0.5\textwidth}
+	\includegraphics[width=\columnwidth]{ssim.eps}
+	\caption{SSIM}
+\end{subfigure}\begin{subfigure}[t]{0.5\textwidth}
+\includegraphics[width=\columnwidth]{fastssim.eps}
+\caption{FAST-SSIM}
+\end{subfigure}
+\caption{Comparison between Daala, HEVC and AV1 based on objective metrics.}\label{fig:metrics}
+\end{figure*}
 
 Testing of Daala is performed on the Are We Compressed 
 Yet?\footnote{\url{https://arewecompressedyet.com/}} testing infrastructure.
 Four different objective metrics are used for the comparison: PSNR,
 PSHR-HVS-M~\cite{PSHRHVSM}, SSIM, and Fast-SSIM~\cite{FastSSIM}.
 
-
-\section{Conclusion}
 
 \bibliographystyle{IEEEtran}
 \bibliography{daala}
