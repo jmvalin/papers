@@ -65,6 +65,7 @@ with indices ($x_i$). Quantized variables are denoted with a hat ($\hat{x}$).
 Unless otherwise noted, $\|\cdot\|$ denotes the $L2$-norm of a vector.
 
 \subsection{Lapped Transforms}
+\label{sec:lapping}
 
 Rather than using a deblocking filter to attenuate blocking artifacts caused
 by quantizing DCT coefficients, Daala uses biorthogonal lapped
@@ -102,6 +103,7 @@ sizes and mixed block sizes.
 \end{figure}
 
 \subsection{Haar DC}
+\label{sec:HaarDC}
 
 Instead of using intra prediction for DC coefficients, the DC coefficients
 within a superblock are further transformed with a 2D Haar wavelet.
@@ -141,6 +143,7 @@ are shown in red\label{fig:haardc}}
 \end{figure}
 
 \subsection{Multi-Symbol Entropy Coder}
+\label{sec:EntropyCoder}
 
 Most recent video codecs encode information using binary arithmetic
 coding, meaning that each symbol can only take two values. The Daala
@@ -174,6 +177,7 @@ sacrificing throughput or modeling efficiency with hardware implementers in the
 AOM\@.
 
 \subsection{Overlapped Block Motion Compensation}
+\label{sec:OBMC}
 
 Because hard block edges are expensive to code with lapped transforms, we
 want to avoid creating blocking artifacts in the motion-compensated
@@ -210,6 +214,7 @@ practice~\cite{Bal01}. The details of the 4-8 grid structure, the blending
 windows, and the dynamic programming algorithm are outlined in~\cite{OBMC}.
 
 \subsection{Perceptual Vector Quantization}
+\label{sec:PVQ}
 
 In the majority of video codecs, a motion-compensated reference frame
 is subtracted from the input frame to compute a residual, which is
@@ -340,7 +345,7 @@ K = \hat{\tau} \sqrt{\frac{N+2}{2}}\ .
 
 
 \subsection{Chroma from Luma (CfL) Prediction}
-
+\label{sec:CFL}
 Although the use of $\mathrm{Y'C_BC_R}$ reduces the correlation across planes
 compared to RGB, there still exists a correlation between the chroma planes
 $\mathrm{C_B}$ and $\mathrm{C_R}$ and the luma plane $\mathrm{Y'}$. Edges in
@@ -457,22 +462,28 @@ at equal quality. AV1 also includes Thor's constrained lowpass
 filter~(CLPF)~\cite{CLPFDraft} that attenuates ringing, but with a more
 limited effect and a lower complexity than the Daala deringing filter.
 
-The multi-symbol entropy coder is also being evaluated. Using the piecewise
+The multi-symbol entropy coder (\cref{sec:EntropyCoder}) is also being
+evaluated. Using the piecewise
 integer mapping exactly as described in~\cite{stuiver1998piecewise} results
 in a bitrate overhead of around 1\%. However, we have experimented with
 better approximations that do not have such cost and assume that
 the denominator of the probabilities is a power of two.
 
-PVQ is early stages of experiments in AV1 and is by far the most invasive
+PVQ (\cref{sec:PVQ}) is early stages of experiments in AV1 and is by far
+the most invasive
 of the Daala techniques under consideration in AV1, as it requires many changes
 in the signaling, as well as the addition of a forward transform on the
 prediction itself. No results are available yet, but should PVQ be
-included in AV1, it would make it possible to also experiment with CfL.
+included in AV1, it would make it possible to also experiment with CfL
+(\cref{sec:CFL}).
 
-Lapped transforms and OBMC are \textit{not} being considered for inclusion
+Lapped transforms (\cref{sec:lapping}) and OBMC (\cref{sec:OBMC}) are 
+\textit{not} being considered for inclusion
 in AV1. Both these techniques have far-reaching interactions with the
 other coding techniques and would essentially require a complete re-design
-of the codec.
+of the codec. Considering that Haar~DC (\cref{sec:HaarDC}) is mostly
+needed to compensate for the
+lack of pixel-domain prediction, it also not currently being considered for AV1.
 
 \section{Results}
 \label{sec:Results}
