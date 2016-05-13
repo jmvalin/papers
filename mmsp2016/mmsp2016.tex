@@ -214,7 +214,7 @@ is subtracted from the input frame to compute a residual, which is
 then transformed, and coded using scalar quantization. Daala differs
 significantly from that description. Not only does it use vector quantization
 rather than scalar quantization, but --- most importantly --- the motion-compensated
-reference is never subtracted from the input frame. Instead, both
+reference is never subtracted from the input frame. Instead,
 the motion-compensated reference is used to build a transformation
 that makes the input easier to code. This technique is called perceptual
 vector quantization (PVQ)~\cite{valin2015spie}.
