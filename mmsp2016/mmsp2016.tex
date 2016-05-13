@@ -135,7 +135,7 @@ neighboring superblock DC coefficients: left, top-left, top, and top-right.
 \end{subfigure}
 \caption{Example of applying Haar DC over three levels on a $64\times 64$
 superblock, subdivided into transform blocks of $8 \times 8$, $16 \times 16$,
-and $32 \times 32$. At each step, the remaining DC coefficients
+and $32 \times 32$. At each step (a) to (d), the remaining DC coefficients
 are shown in red\label{fig:haardc}}
 
 \end{figure}
@@ -189,10 +189,11 @@ encoder used at the time.
 The use of variable-sized MC blocks requires a blending scheme that maintains
 continuity between neighboring regions of different sizes. One approach, used
 by codecs like Dirac~\cite{Dirac}, is to fix the overlap size at the largest
-allowed by the smallest blocks (8~pixels, in this case). This makes a large
+overlap allowed by the smallest motion compensated block (8~pixels, in this
+case). This makes a large
 block equivalent to a group of smaller blocks with the same motion vector.
 However, this can create low-passing artifacts in a predictable grid pattern.
-These can be visually annoying, but require many bits to correct because of
+These can be visually annoying, and require many bits to correct because of
 their locality. Zhang \textit{et al.} showed that splitting large blocks,
 but only as far as necessary to prevent their blending windows from
 overlapping more than one neighboring block, improved quality~\cite{ZAS98}.
@@ -210,7 +211,7 @@ windows, and the dynamic programming algorithm are outlined in~\cite{OBMC}.
 
 \subsection{Perceptual Vector Quantization}
 
-In the majority of video codecs, motion-compensated reference frame
+In the majority of video codecs, a motion-compensated reference frame
 is subtracted from the input frame to compute a residual, which is
 then transformed, and coded using scalar quantization. Daala differs
 significantly from that description. Not only does it use vector quantization
@@ -225,7 +226,8 @@ previously used for music in the Opus audio codec~\cite{ValinAES}. In Opus,
 the pyramid vector quantizer is used as a gain-shape quantizer in a way that
 ensures that the signal energy is always conserved. Using a gain-shape
 quantizer in a video codec is more complicated, since we need to also take
-into account a prediction. While it would be possible to quantize the difference
+into account a prediction. While it would be possible to quantize the
+scalar difference
 between the prediction and the input, conserving the energy of that
 difference would be perceptually meaningless.
 
@@ -255,9 +257,10 @@ that fact, we express it as
 \end{equation}
 where $g$ is the magnitude of $\mathbf{z}$ (and thus also the magnitude of
 $\mathbf{x}$), $\mathbf{u}$ is a unit vector with no component along the
-$\mathbf{e}_m$ direction, and the angle $\theta$ representing the
-similarity between the prediction and the input. Since the Householder
-reflection is orthonormal, it follows that
+$\mathbf{e}_m$ direction, and $\theta$ is the angle between $\mathbf{r}$ and
+$\mathbf{x}$ (a meaningful parameter that represents the similarity between
+the prediction and the input). Since the Householder reflection is orthonormal,
+it follows that
 \begin{equation}
 \theta = \arccos\frac{\mathbf{x}^T\mathbf{r}}
                    {\left\|\mathbf{x}\right\|\left\|\mathbf{r}\right\|}\ .
@@ -276,9 +279,10 @@ where the number of \textit{pulses} $K$ controls the size of the codebook.
 
 The encoder quantizes $g$ and $\theta$ and encodes them in the bitstream along
 with the integer vector $\mathbf{y}$ (except for $y_m=0$). The codebook
-size $K$ is determined only from $g$ and $theta$ and does not need to be
-transmitted. Since the decoder also has access to the prediction, the
-reflection vector $\mathbf{v}$ and the values $m$ and $s$ do not need to
+size $K$ is determined only from $g$ and $\theta$ and does not need to be
+transmitted. Since the decoder has access to the prediction vector $\mathbf{r}$
+and the reflection vector $\mathbf{v}$, the values $m$ and $s$ also do not
+need to
 be transmitted. In total, there are $N-2$ degrees of freedom to code in
 $\mathbf{y}$, with two more for $g$ and $\theta$, so the total is still
 $N$ degrees of freedom. The main difference however is that two of the
@@ -318,7 +322,7 @@ first. From there it can compute the quantization step size for $\theta$ as
 \begin{equation}
 Q_\theta = \frac{\beta}{\hat{\gamma}}\ ,
 \end{equation}
-where $\beta = 1/(1-\alpha)$.
+where $\beta = \frac{1}{1-\alpha}$.
 
 The size of the codebook $K$ was determined through curve
 fitting~\cite{valin2015spie} to be
@@ -340,7 +344,8 @@ K = \hat{\tau} \sqrt{\frac{N+2}{2}}\ .
 
 Although the use of $\mathrm{Y'C_BC_R}$ reduces the correlation across planes
 compared to RGB, there still exists a correlation between the chroma planes
-$\mathrm{C_B}$ and $\mathrm{C_R}$ and the luma plane Y'. Edges in chroma tend to
+$\mathrm{C_B}$ and $\mathrm{C_R}$ and the luma plane $\mathrm{Y'}$. Edges in
+chroma tend to
 align very well with edges in luma with only the amount of contrast (gain) differing.
 Because of that property, PVQ makes it especially easy to predict
 chroma planes from the luma plane. Daala's chroma from luma (CfL)~\cite{egge2015spie}
@@ -362,7 +367,7 @@ offsets. Instead, it is a directional outlier-robust filter that smooths the
 neighborhood of pixels while preserving edges.
 
 Let $x\left(n\right)$ denote a 1-dimensional signal and $w_{k}$
-denote filter tap weights, a linear finite impulse response (FIR)
+denote filter tap weights. A linear finite impulse response (FIR)
 filter with unit DC response is defined as
 \begin{equation}
 y\left(n\right)=\frac{1}{\sum_{k}w_{k}}\sum_{k}w_{k}x\left(n+k\right)\ ,\label{eq:FIR1}
@@ -418,8 +423,9 @@ is set for the entire a frame, and one of six adjustment factors (including an
 \textit{off} setting) is signaled for each superblock. With entropy coding, the
 cost of the signaling generally averages 2~bits per superblock, or 128~bytes for
 a 1080p keyframe. For predicted frames, the deringing filter is not applied to
-block where no coefficients are coded and no adjustment is coded for superblocks
-where no coefficients are coded, further reducing the amount of signaling. The
+$8\times 8$ blocks where no coefficients are coded, and no adjustment factor
+is coded for superblocks where no $8\times 8$ block is filtered, further
+reducing the amount of signaling. The
 effect of the deringing filter at low bitrate is shown in \cref{fig:deringing}.
 
 \begin{figure}
@@ -442,7 +448,7 @@ effect of the deringing filter at low bitrate is shown in \cref{fig:deringing}.
 The recently-formed Alliance for Open Media (AOM) is currently specifying
 AV1, a royalty-free video codec. The initial development is based on
 technology from three existing codecs: Google's VP9~\cite{VP9Spec} codec,
-Cisco's Thor~\cite{ThorDraft} codec, as well as the Daala codec presented
+Cisco's Thor~\cite{ThorDraft} codec, and the Daala codec presented
 here. For this reason, some of the techniques used in Daala are currently
 being considered for inclusion in AV1.
 
