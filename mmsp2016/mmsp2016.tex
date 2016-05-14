@@ -44,7 +44,7 @@ patent-encumbered techniques used in most current video codecs. One
 of the goals of the Daala codec is to explore techniques that are
 very different from those typically used in most codecs. Some of
 these techniques are new to Daala, while others already existed, but
-were not used in popular video coding standards. While Daala is not yet
+were not used in popular video coding standards. Although Daala is not yet
 a competitive codec on its own, some of the techniques it uses are
 currently being integrated in the Alliance for Open Media 
 (AOM)~\cite{AOMWebsite} AV1 codec.
@@ -147,7 +147,7 @@ reduces bitrate in smooth areas.
 \caption{DC coefficients from $32\times 32$ sub-blocks are combined}
 \end{subfigure}
 \caption{Example of applying Haar DC over three levels on a $64\times 64$
-superblock, subdivided into transform blocks of $8 \times 8$, $16 \times 16$,
+superblock subdivided into transform blocks of $8 \times 8$, $16 \times 16$,
 and $32 \times 32$. At each step (a) to (d), the remaining DC coefficients
 are shown in red\label{fig:haardc}}
 
@@ -196,8 +196,8 @@ prediction. For this we use overlapped block motion compensation
 (OBMC)~\cite{OBMC}. This is done on an adaptive grid of Motion Compensation
 (MC) blocks ranging from $8\times 8$ up to $64\times 64$, in order to scale to
 high-resolution content. This grid is completely independent of the transform
-blocks, and neither imposes any constraints on the sizes of the other. We also
-experimented with $4\times 4$ blocks, but they were rarely used in practice,
+blocks, and neither partition imposes any constraints on the sizes of the other. We also
+experimented with $4\times 4$ MC blocks, but they were rarely used in practice,
 and actually caused a small quality regression at equal bitrate with the
 encoder used at the time.
 
@@ -471,19 +471,19 @@ The deringing filter described in \cref{sec:deringing} is already
 fully integrated in AV1 and has been shown to reduce bitrate by around 2\%
 at equal quality. AV1 also includes Thor's constrained lowpass
 filter~(CLPF)~\cite{CLPFDraft} that attenuates ringing, but with a more
-limited effect and a lower complexity than the Daala deringing filter.
+limited effect and a lower complexity than Daala's deringing filter.
 
 The multi-symbol entropy coder (\cref{sec:EntropyCoder}) is also being
-evaluated. Using the piecewise
+evaluated for use in AV1. Using the piecewise
 integer mapping exactly as described in~\cite{stuiver1998piecewise} results
 in a bitrate overhead of around 1\%. However, we have experimented with
 better approximations that do not have such cost and assume that
 the denominator of the probabilities is a power of two.
 
-PVQ (\cref{sec:PVQ}) is early stages of experiments in AV1 and is by far
-the most invasive
-of the Daala techniques under consideration in AV1, as it requires many changes
-in the signaling, as well as the addition of a forward transform on the
+PVQ (\cref{sec:PVQ}) is in the early stages of experimentation within AV1 and
+is by far the most invasive of the Daala techniques under consideration.
+Integration requires many changes to the bitstream, as well as the addition
+of a forward transform on the
 prediction itself. No results are available yet, but should PVQ be
 included in AV1, it would make it possible to also experiment with CfL
 (\cref{sec:CFL}).
@@ -524,17 +524,17 @@ on the \texttt{ntt-short-1} test set.
 Four different objective metrics are used for the comparison: PSNR,
 PSHR-HVS-M~\cite{PSHRHVSM}, SSIM, and Fast-SSIM~\cite{FastSSIM}. We compare
 Daala\footnote{Git version d55fff01 from April 25th, 2016 with command-line options: -k 1000 -v}
-to the AV1 encoder\footnote{Git version 337b23a5 from April 7th, 2016 with deringing enabled and command-line options: --ivf --frame-parallel=0 --tile-columns=0 --auto-alt-ref=2 --cpu-used=0 --passes=2 --threads=1 --kf-min-dist=1000 --kf-max-dist=1000 --lag-in-frames=25 --end-usage=q --cq-level=}, to the x264 H.264
+wth the AV1 encoder\footnote{Git version 337b23a5 from April 7th, 2016 with deringing enabled and command-line options: --ivf --frame-parallel=0 --tile-columns=0 --auto-alt-ref=2 --cpu-used=0 --passes=2 --threads=1 --kf-min-dist=1000 --kf-max-dist=1000 --lag-in-frames=25 --end-usage=q --cq-level=}, the x264 H.264
 encoder\footnote{Command-line options: --preset placebo --min-keyint 1000 --keyint 1000 --no-scenecut --crf=},
-and to the x265 HEVC encoder\footnote{Version 1.6 with command-line options: --preset slow --frame-threads 1 --min-keyint 1000 --keyint 1000 --no-scenecut --crf=}.
+and the x265 HEVC encoder\footnote{Version 1.6 with command-line options: --preset slow --frame-threads 1 --min-keyint 1000 --keyint 1000 --no-scenecut --crf=}.
 
 The results in \cref{fig:metrics} show that Daala is generally better than
-H.264, ans slightly worse than HEVC and AV1. From the developers' informal
-evaluation, the subjective performance of Daala is close to what the PSNR\-HVS\-M
+H.264, and slightly worse than HEVC and AV1. Based on this authors' informal
+evaluation, the subjective performance of Daala is close to what the PSNR-HVS-M
 results show in \cref{fig:psnrhvsm}. Qualitatively, the Daala artifacts tend to differ
 greatly from most other video codecs. Daala tends to perform more poorly on sharp
-details and edges, while retaining more of the smooth texture. This is in part due
-to the PVQ activity masking, but the behavior is present even when activity masking
+details and edges, while retaining more texture in low contrast regions. This is in part due
+to PVQ activity masking, but the behavior is present even when activity masking
 is not used.
 
 Considering that most of the technology used in Daala is either new or unproven
