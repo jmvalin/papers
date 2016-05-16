@@ -11,7 +11,7 @@
 
 %\def\@name{ \emph{Jean-Marc Valin, Nathan E. Egge, Thomas Daede, Timothy B. Terriberry},  \\ \emph{Christopher Montgomery}\vspace{0.3cm}}
 \name{Jean-Marc Valin, Nathan E. Egge, Thomas Daede, Timothy B. Terriberry, Christopher Montgomery
-\thanks{Copyright 2016 Mozilla Foundation. This work is licensed under \href{https://creativecommons.org/licenses/by/4.0/}{CC-BY 4.0}. Send correspondence to Jean-Marc Valin <\href{mailto:jmvalin@jmvalin.ca}{jmvalin@jmvalin.ca}>.}
+\thanks{Send correspondence to Jean-Marc Valin <\href{mailto:jmvalin@jmvalin.ca}{jmvalin@jmvalin.ca}>.}
 }
 \address{Mozilla, Mountain View, CA, USA \\ Xiph.Org Foundation}
 \title{Daala: A Perceptually-Driven Still Picture Codec}
