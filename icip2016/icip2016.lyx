@@ -749,9 +749,11 @@ f(x,t,R) & =x+\min(x,e)\nonumber \\
 \end_inset
 
 This mapping is about three times as expensive to evaluate, but remains
- an order of magnitude less complex than a division.
- It reduces the average overhead introduced by entropy coder by about 0.3%,
- though it may ultimately prove to be too expensive to justify this reduction.
+ an order of magnitude less complex than a division and reduces the average
+ overhead introduced by entropy coder by about 0.3%.
+ While this is an acceptable trade-off for still picture coding, it may
+ ultimately prove to be too expensive for real-time video to justify this
+ reduction.
 \end_layout
 
 \begin_layout Subsection
