@@ -296,7 +296,7 @@ with
 where the number of \textit{pulses} $K$ controls the size of the codebook.
 
 The encoder quantizes $g$ and $\theta$ and encodes them in the bitstream along
-with the integer vector $\mathbf{y}$ (except when $y_m=0$). The codebook
+with the integer vector $\mathbf{y}$ (excluding $y_m$ which is always $0$). The codebook
 size $K$ is determined only from $g$ and $\theta$ and does not need to be
 transmitted. Since the decoder has access to the prediction vector $\mathbf{r}$,
 it can compute the reflection vector $\mathbf{v}$ without the need to transmit
@@ -305,7 +305,7 @@ $\mathbf{y}$, and two more for $g$ and $\theta$. Thus we still code parameters
 with a total of $N$ degrees of freedom. The main difference from scalar
 quantization is that two of the
 coded values have a perceptual meaning: $g$ is the amount of contrast and
-$\theta$ is the amount deviation from the prediction. By coding $g$
+$\theta$ is the amount of deviation from the prediction. By coding $g$
 as a parameter, it is easier to preserve the amount of contrast than by
 coding only DCT coefficients.
 
