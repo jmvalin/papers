@@ -1,0 +1,3836 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass IEEEtran
+\begin_preamble
+\usepackage{color}
+\usepackage{url}
+\usepackage[pdfpagemode=None,pdfstartview=FitH,pdfview=FitH,colorlinks=true,pdftitle=The Daala Directional Deringing Filter,pdfauthor=Jean-Marc Valin]{hyperref}
+\end_preamble
+\options journal
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 2cm
+\topmargin 2cm
+\rightmargin 2cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+The Daala Directional Deringing Filter
+\end_layout
+
+\begin_layout Author
+Jean-Marc Valin,
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+IEEEmembership{Member,~IEEE}
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+thanks{Jean-Marc Valin is with Mozilla Corporation and Xiph.Org Foundation.}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+thanks{Corresponding email: jmvalin@jmvalin.ca}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+thanks{Copyright 2014-2016 Mozilla Foundation.
+ This work is licensed under 
+\backslash
+href{https://creativecommons.org/licenses/by/4.0/}{CC-BY 4.0}.
+ Send correspondence to Jean-Marc Valin <
+\backslash
+href{mailto:jmvalin@jmvalin.ca}{jmvalin@jmvalin.ca}>.}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Abstract
+This paper presents the deringing filter used in the Daala royalty-free
+ video codec.
+ The filter is based on a non-linear conditional replacement filter and
+ is designed for vectorization efficiency.
+ It takes into account the direction of edges and patterns being filtered.
+ The filter works by identifying the direction of each block and then adaptively
+ filtering along the identified direction.
+ In a second pass, the blocks are also filtered in a different direction,
+ with more conservative thresholds to avoid blurring edges.
+ The proposed deringing filter is shown to improve the quality of both Daala
+ and the Alliance for Open Media (AOM) AV1 video codec.
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+The Daala video codec has been under development since 2012 with the goal
+ of achieving royalty-free status by using technology that differs greatly
+ from more traditional video codecs such as H.264 and HEVC.
+ For example, Daala uses lapped transforms
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "MalvarS89,Tran2003"
+
+\end_inset
+
+ rather than relying on more traditional deblocking filters.
+ It is also based on the perceptual vector quantization(PVQ)
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "valin2015spie"
+
+\end_inset
+
+ technique rather than on scalar quantization of a transformed residual.
+ Some of these techniques achieve better quality on textured content, at
+ the cost of more ringing artefacts.
+ These are especially present in sharp edges due to Daala's lack of intra
+ prediction modes capable of predicting diagonal directions.
+ For these reasons, Daala greatly benefits from a deringing filter.
+\end_layout
+
+\begin_layout Standard
+The main goal of deringing is to filter out ringing artifacts while retaining
+ all the details of the image.
+ In HEVC, this is achieved by the Sample Adaptive Offset
+\begin_inset space ~
+\end_inset
+
+(SAO)
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "HEVC-SAO"
+
+\end_inset
+
+ algorithm that defines signal offsets for different classes of pixels.
+ Unlike SAO, the approach we take in Daala is that of a non-linear spatial
+ filter.
+ From the very beginning, the design of the filter was constrained to be
+ easily vectorizable (i.e.
+ implementable with SIMD operations), which was not the case for other non-linea
+r filters like the median filter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Median"
+
+\end_inset
+
+ and the bilateral filter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Bilateral"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+The design of the deringing filter originates from the following observations.
+ The amount of ringing in a coded image tends to be roughly proportional
+ to the quantization step size.
+ The amount of detail is a property of the input image, but the smallest
+ detail actually retained in the quantized image tends to also be proportional
+ to the quantization step size.
+ For a given quantization step size, the amplitude of the ringing is generally
+ less than the amplitude of the details.
+\end_layout
+
+\begin_layout Standard
+This paper describes a deringing filter that takes into account the direction
+ of edges and patterns being filtered.
+ The filter works by identifying the direction of each block and then adaptively
+ filtering along the identified direction.
+ In a second pass, the blocks are also filtered in a different direction,
+ with more conservative thresholds to avoid blurring edges.
+ The deringing filter also vectorizes well, requiring no per-pixel scalar
+ operation.
+ An high-level interactive demonstration of the algorithm is available at
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "deringing-demo"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Section
+Direction Search
+\end_layout
+
+\begin_layout Standard
+The proposed deringing filter is based on the direction of edges, so we
+ will start by describing the direction search.
+ For this, the image is first divided into blocks of 
+\begin_inset Formula $8\times8$
+\end_inset
+
+.
+ The block size is chosen to be fine enough to adequately handle non-straight
+ edges, while being large enough to reliably estimate directions when applied
+ to a quantized image.
+ Having a constant direction over an 
+\begin_inset Formula $8\times8$
+\end_inset
+
+ region also makes vectorization of the filter easier.
+\end_layout
+
+\begin_layout Standard
+For each block we want to determine the direction that best matches the
+ pattern in the block.
+ This is done by minimizing the sum of squared differences (SSD) between
+ the quantized block and a perfectly directional block.
+ A perfectly directional block is a block for which each line along a certain
+ direction has a constant value.
+ For each direction, we assign a line number 
+\begin_inset Formula $k$
+\end_inset
+
+ to each pixel, as shown in Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Lines-for-direction"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename dlines.fig
+	scale 50
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Line number 
+\begin_inset Formula $k$
+\end_inset
+
+ for pixels following direction 
+\begin_inset Formula $d=1$
+\end_inset
+
+ in an 
+\begin_inset Formula $8\times8$
+\end_inset
+
+ block.
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Lines-for-direction"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+For each direction 
+\begin_inset Formula $d$
+\end_inset
+
+, the pixel average for line 
+\begin_inset Formula $k$
+\end_inset
+
+ is determined by:
+\begin_inset Formula 
+\begin{equation}
+\mu_{d,k}=\frac{1}{N_{d,k}}\sum_{p\in P_{d,k}}x_{p}\ ,\label{eq:pixel-average}
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula $x_{p}$
+\end_inset
+
+ is the value of pixel 
+\begin_inset Formula $p$
+\end_inset
+
+, 
+\begin_inset Formula $P_{d,k}$
+\end_inset
+
+ is the set of pixels in line 
+\begin_inset Formula $k$
+\end_inset
+
+ following direction 
+\begin_inset Formula $d$
+\end_inset
+
+ and 
+\begin_inset Formula $N_{d,k}$
+\end_inset
+
+ is the cardinality of 
+\begin_inset Formula $P_{d,k}$
+\end_inset
+
+ (for example, in Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Lines-for-direction"
+
+\end_inset
+
+, 
+\begin_inset Formula $N_{1,0}=2$
+\end_inset
+
+ and 
+\begin_inset Formula $N_{1,4}=8$
+\end_inset
+
+).
+ The SSD is then defined as:
+\begin_inset Formula 
+\begin{equation}
+\sigma_{d}^{2}=\sum_{k\in\mathrm{block},d}\left[\sum_{p\in P_{d,k}}\left(x_{p}-\mu_{d,k}\right)^{2}\right]\ .\label{eq:direction-variance0}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Expanding 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:direction-variance0"
+
+\end_inset
+
+ and then substituting 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:pixel-average"
+
+\end_inset
+
+ into it, we get
+\begin_inset Formula 
+\begin{align}
+\sigma_{d}^{2}= & \sum_{k\in\mathrm{block},d}\left[\sum_{p\in P_{d,k}}x_{p}^{2}-2\sum_{p\in P_{d,k}}x_{p}\mu_{d,k}+\sum_{p\in P_{d,k}}\mu_{d,k}^{2}\right]\nonumber \\
+= & \sum_{k\in\mathrm{block},d}\left[\sum_{p\in P_{d,k}}x_{p}^{2}-2\mu_{d,k}\sum_{p\in P_{d,k}}x_{p}+N_{d,k}\mu_{d,k}^{2}\right]\nonumber \\
+= & \sum_{k\in\mathrm{block},d}\left[\sum_{p\in P_{d,k}}x_{p}^{2}-\frac{1}{N_{d,k}}\left(\sum_{p\in P_{d,k}}x_{p}\right)^{2}\right]\nonumber \\
+= & \sum_{p\in\mathrm{block}}x_{p}^{2}-\sum_{k\in\mathrm{block},d}\frac{1}{N_{d,k}}\left(\sum_{p\in P_{d,k}}x_{p}\right)^{2}\ .\label{eq:direction-variance1}
+\end{align}
+
+\end_inset
+
+ Note that the simplifications leading to 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:direction-variance1"
+
+\end_inset
+
+ are the same as to those allowing a variance to be computed as 
+\begin_inset Formula $\sigma_{x}^{2}=\sum x^{2}-\left(\sum x\right)^{2}/N$
+\end_inset
+
+.
+ Considering that the first term of 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:direction-variance1"
+
+\end_inset
+
+ is constant with respect to 
+\begin_inset Formula $d$
+\end_inset
+
+, we simply find the optimal direction 
+\begin_inset Formula $d_{opt}$
+\end_inset
+
+ by maximizing the second term:
+\begin_inset Formula 
+\begin{equation}
+d_{opt}=\max_{d}s_{d}\,,\label{eq:direction-variance2}
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula 
+\begin{equation}
+s_{d}=\sum_{k\in\mathrm{block},d}\frac{1}{N_{d,k}}\left(\sum_{p\in P_{d,k}}x_{p}\right)^{2}\ .\label{eq:direction-variance3}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We can avoid the division in 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:direction-variance3"
+
+\end_inset
+
+ by multiplying 
+\begin_inset Formula $s_{d}$
+\end_inset
+
+ by 840, the least common multiple of the possible 
+\begin_inset Formula $N_{d,k}$
+\end_inset
+
+ values (
+\begin_inset Formula $1\le N_{d,k}\le8$
+\end_inset
+
+).
+ When using 8\SpecialChar \nobreakdash-
+bit pixel data (for higher bit depths, we downscale to 8
+\begin_inset space ~
+\end_inset
+
+bits), and centering the values such that 
+\begin_inset Formula $-128\le x_{p}\le127$
+\end_inset
+
+, then 
+\begin_inset Formula $840s_{d}$
+\end_inset
+
+ and all calculations leading to that value fit in a 32\SpecialChar \nobreakdash-
+bit signed integer.
+\end_layout
+
+\begin_layout Standard
+Fig.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Example-of-direction"
+
+\end_inset
+
+ shows an example of a direction search for an 
+\begin_inset Formula $8\times8$
+\end_inset
+
+ block containing a line.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename direction.png
+	lyxscale 40
+	width 100col%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Example of direction search for an 
+\begin_inset Formula $8\times8$
+\end_inset
+
+ block.
+ The patterns shown are based on the 
+\begin_inset Formula $\mu_{d,k}$
+\end_inset
+
+ values.
+ In this case, the 45-degree direction is the one that minimizes 
+\begin_inset Formula $\sigma_{d}^{2}$
+\end_inset
+
+, so it would be selected by the search.
+ Note that the error values 
+\begin_inset Formula $\sigma_{d}$
+\end_inset
+
+ shown are never computed in practice (only 
+\begin_inset Formula $s_{d}$
+\end_inset
+
+ is).
+ 
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Example-of-direction"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Conditional Replacement Filter
+\end_layout
+
+\begin_layout Standard
+The conditional replacement filter is designed to remove noise without blurring
+ sharp edges.
+ A low-pass finite impulse response (FIR) filter with 
+\begin_inset Formula $\left(2M+1\right)$
+\end_inset
+
+ taps in one dimension can be expressed as
+\begin_inset Formula 
+\begin{equation}
+y\left(n\right)=\frac{1}{W}\sum_{k=-M}^{k=M}w_{k}x\left(n+k\right)\ ,\label{eq:linear-filter}
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula $W=\sum_{k=-M}^{M}w_{k}$
+\end_inset
+
+.
+ Although it removes noise from a signal, it also blurs any details and
+ sharp edges, which is undesirable.
+ Bilateral filters avoid the blurring effect by making each weights 
+\begin_inset Formula $w_{k}$
+\end_inset
+
+ dependent on the difference signal 
+\begin_inset Formula $x\left(n+k\right)-x\left(n\right)$
+\end_inset
+
+, typically using a Gaussian function.
+ One disadvantage of this approach is that it requires keeping track of
+ the sum of the weights for each sample 
+\begin_inset Formula $n$
+\end_inset
+
+ being filtered.
+ It also results in having a different 
+\begin_inset Formula $\frac{1}{W}$
+\end_inset
+
+ normalization factor for each pixel, making vectorization harder.
+ 
+\end_layout
+
+\begin_layout Standard
+Rather than change the 
+\begin_inset Formula $w_{k}$
+\end_inset
+
+ values, the conditional replacement filter changes the signal 
+\begin_inset Formula $x\left(n+k\right)$
+\end_inset
+
+ used in the filter.
+ When filtering sample 
+\begin_inset Formula $n$
+\end_inset
+
+, any of the 
+\begin_inset Formula $x\left(n+k\right)$
+\end_inset
+
+ tap inputs that differs from 
+\begin_inset Formula $x\left(n\right)$
+\end_inset
+
+ by more than a threshold 
+\begin_inset Formula $T$
+\end_inset
+
+, is replaced by 
+\begin_inset Formula $x\left(n\right)$
+\end_inset
+
+ in the calculation:
+\begin_inset Formula 
+\begin{equation}
+y\left(n\right)=\frac{1}{W}\sum_{k=-M}^{k=M}w_{k}R\left(x\left(n\right),x\left(n+k\right),T\right)\ ,\label{eq:crf-definition}
+\end{equation}
+
+\end_inset
+
+with
+\begin_inset Formula 
+\begin{equation}
+R\left(x_{0},x_{k},T\right)=\begin{cases}
+x_{k} & ,\left|x_{k}-x_{0}\right|<T\\
+x_{0} & ,\mathrm{otherwise}
+\end{cases}\ .\label{eq:crf-replacement}
+\end{equation}
+
+\end_inset
+
+ The filter computation is illustrated in Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Conditional-filter-computation"
+
+\end_inset
+
+ and an example is shown in Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Conditional-filter-example"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename crf_def.eps
+	width 100col%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Conditional replacement filter computation
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Conditional-filter-computation"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename crf_orig.eps
+	lyxscale 60
+	width 48col%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+hspace{2mm}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename crf_noisy.eps
+	lyxscale 60
+	width 48col%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+vspace{2mm}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename crf_linear.eps
+	lyxscale 60
+	width 48col%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+hspace{2mm}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename crf_out.eps
+	lyxscale 60
+	width 48col%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Conditional replacement filter example.
+ Up-left: original signal, up-right: noisy signal, bottom-left: filtered
+ with 7-tap linear filter, bottom-right: filtered with 7-tap conditional
+ replacement filter.
+ 
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Conditional-filter-example"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Through algebraic simplifications, we can express the filter 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:crf-definition"
+
+\end_inset
+
+ in terms of the differences 
+\begin_inset Formula $x\left(n+k\right)-x\left(n\right)$
+\end_inset
+
+, which yields
+\begin_inset Formula 
+\begin{equation}
+y\left(n\right)=x\left(n\right)+\frac{1}{W}\sum_{k=-M,k\neq0}^{k=M}w_{k}f\left(x\left(n+k\right)-x\left(n\right),T\right)\ ,\label{eq:conditional-replacement-diff}
+\end{equation}
+
+\end_inset
+
+with the threshold function 
+\begin_inset Formula 
+\begin{equation}
+f\left(d,T\right)=\left\{ \begin{array}{ll}
+d & ,\left|d\right|<T\\
+0 & ,\mathrm{otherwise}
+\end{array}\right.\ .\label{eq:threshold-function}
+\end{equation}
+
+\end_inset
+
+The advantage of this formulation is that the normalization by 
+\begin_inset Formula $\frac{1}{W}$
+\end_inset
+
+ can be approximated without causing any bias (DC offset), even when 
+\begin_inset Formula $W$
+\end_inset
+
+ is not a power of two.
+ Also, because 
+\begin_inset Formula $W$
+\end_inset
+
+ does not depend on the number of pixels being replaced, the normalization
+ is easy to vectorize over a row (or column) of pixels.
+ 
+\end_layout
+
+\begin_layout Subsection
+Directional Filtering
+\end_layout
+
+\begin_layout Standard
+The directional filter for pixel 
+\begin_inset Formula $\left(i,j\right)$
+\end_inset
+
+ is defined as the 7-tap conditional replacement filter
+\begin_inset Formula 
+\begin{multline}
+y\left(i,j\right)=x\left(i,j\right)+\frac{1}{W}\sum_{k=-3,\,k\neq0}^{3}w_{k}f\left[x\left(i,j\right)-\right.\\
+\left.x\left(i+\left\lfloor kd_{y}\right\rfloor ,j+\left\lfloor kd_{x}\right\rfloor \right),T_{d}\right]\label{eq:directional_filter}
+\end{multline}
+
+\end_inset
+
+where 
+\begin_inset Formula $d_{x}$
+\end_inset
+
+ and 
+\begin_inset Formula $d_{y}$
+\end_inset
+
+ define the direction, 
+\begin_inset Formula $W$
+\end_inset
+
+ is a constant normalizing factor, 
+\begin_inset Formula $T_{d}$
+\end_inset
+
+ is the filtering threshold for the block.
+ The direction parameters are shown in Table
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:Direction-parameters"
+
+\end_inset
+
+.
+ The weights 
+\begin_inset Formula $w_{k}$
+\end_inset
+
+ can be chosen so that 
+\begin_inset Formula $W$
+\end_inset
+
+ is a power of two.
+ For example, Daala currently uses 
+\begin_inset Formula $\mathbf{w}=\left[\begin{array}{ccccccc}
+1 & 2 & 3 & \left(4\right) & 3 & 2 & 1\end{array}\right]$
+\end_inset
+
+ (where the middle value of 4 is implicit) with 
+\begin_inset Formula $W=16$
+\end_inset
+
+.
+ Since the direction is constant over 
+\begin_inset Formula $8\times8$
+\end_inset
+
+ blocks, all operations in this filter are directly vectorizable over the
+ blocks.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Direction parameters
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:Direction-parameters"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="9" columns="4">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="right" valignment="top">
+<column alignment="right" valignment="top" width="0pt">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Index
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Direction
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" topline="true" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $d_{x}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" topline="true" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $d_{y}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{45}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $-1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{22.5}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $-\frac{1}{2}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{0}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $0$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{-22.5}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $\frac{1}{2}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{-45}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{-65.5}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $\frac{1}{2}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{-90}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $0$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{-112.5}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $-\frac{1}{2}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="right" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Second Stage Filter
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename crf_direction.pdf
+	width 37.8col%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+hspace{0.3cm}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename crf_across.pdf
+	width 58.1col%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Filtering along the direction (left) and filtering across the direction
+ (right)
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Filtering-along-across"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The 7-tap directional filter is sometimes not enough to eliminate all ringing,
+ so we use an additional filtering step that operates across the direction
+ lines used in the first filter.
+ Considering that the input of the second filter has considerably less ringing
+ than the input of the second filter, and the fact that the second filter
+ risks blurring edges, the position-dependent threshold 
+\begin_inset Formula $T_{2}\left(i,j\right)$
+\end_inset
+
+ for the second filter is set lower than that of the first filter 
+\begin_inset Formula $T_{d}$
+\end_inset
+
+.
+ The filter structure is the same as the one in Eq.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:directional_filter"
+
+\end_inset
+
+.
+ The direction parameters for the second stage filter are shown in Table
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "tab:Ortho-parameters"
+
+\end_inset
+
+ and the filter weights are 
+\begin_inset Formula $\mathbf{w}=\left[\begin{array}{ccccc}
+1 & 1 & \left(\nicefrac{4}{3}\right) & 1 & 1\end{array}\right]$
+\end_inset
+
+ (the middle value 
+\begin_inset Formula $\nicefrac{4}{3}$
+\end_inset
+
+ is again implicit) with 
+\begin_inset Formula $W=16/3$
+\end_inset
+
+.
+ Considering that each input pixel from the second filter is itself the
+ output of the 7-tap directional filter, the combination of the two filters
+ is effectively a 35-tap separable filter.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Second stage filter parameters
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:Ortho-parameters"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="9" columns="4">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Index
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Direction
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $d_{x}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $d_{y}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{0}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $0$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{90}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $0$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{90}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $0$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{90}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $0$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{0}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $0$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{0}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $0$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{0}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $0$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+rotatebox[origin=c]{0}{$
+\backslash
+leftrightarrow$}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" bottomline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $0$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Setting Thresholds
+\end_layout
+
+\begin_layout Standard
+The thresholds 
+\begin_inset Formula $T_{d}$
+\end_inset
+
+ and 
+\begin_inset Formula $T_{2}$
+\end_inset
+
+ must be set high enough to smooth out ringing artifacts, but low enough
+ to avoid blurring important details in the image.
+ Although the ringing is 
+\emph on
+roughly
+\emph default
+ proportional to the quantization step size 
+\begin_inset Formula $Q$
+\end_inset
+
+, as the quantizer increases the error grows slightly less than linearly
+ because the unquantized coefficients become very small compared to 
+\begin_inset Formula $Q$
+\end_inset
+
+.
+ As a starting point for determining the thresholds, Daala uses a power
+ model of the form
+\begin_inset Formula 
+\begin{equation}
+T_{0}=\alpha_{1}Q^{\beta}\ell\ ,\label{eq:setting-Td}
+\end{equation}
+
+\end_inset
+
+with 
+\begin_inset Formula $\beta=0.842$
+\end_inset
+
+ in Daala, and where 
+\begin_inset Formula $\alpha_{1}$
+\end_inset
+
+ depends on the input scaling.
+ The deringing 
+\emph on
+level
+\emph default
+ 
+\begin_inset Formula $\ell$
+\end_inset
+
+ is a threshold adjustment coded for each superblock (
+\begin_inset Formula $64\times64$
+\end_inset
+
+).
+ In the AV1 codec, a global threshold is selected by the encoder instead
+ of using a function of the quantizer, so 
+\begin_inset Formula 
+\begin{equation}
+T_{0}=\ell_{g}\cdot\ell\ .
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Another factor that affects the optimal filtering threshold is the presence
+ of strong directional edges/patterns.
+ These can be estimated from the 
+\begin_inset Formula $s_{d}$
+\end_inset
+
+ parameters computed in Eq.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:direction-variance3"
+
+\end_inset
+
+ as
+\begin_inset Formula 
+\begin{equation}
+\delta=s_{d_{opt}}-s_{d_{ortho}}\ ,\label{eq:variande-delta}
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula $d_{ortho}=d_{opt}+4\ \left(\mathrm{mod}\,8\right)$
+\end_inset
+
+.
+ We compute the direction filtering threshold for each block as 
+\begin_inset Formula 
+\begin{equation}
+T_{d}=T_{0}\cdot\max\left(\tfrac{1}{2},\min\left(3,\alpha_{2}\delta^{1/6}\right)\right)\ ,
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula $\alpha_{2}$
+\end_inset
+
+ also depends on the input scaling.
+ For the second filter, we use a more conservative threshold that depends
+ on the amount of change caused by the directional filter.
+\begin_inset Formula 
+\begin{equation}
+T_{2}\left(i,j\right)=\min\left(T_{d},\tfrac{1}{3}T_{d}+\left|y\left(i,j\right)-x\left(i,j\right)\right|\right)\ .\label{eq:setting-T2}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As a special case, when the pixels corresponding to the 
+\begin_inset Formula $8\times8$
+\end_inset
+
+ block being filtered are all skipped, then 
+\begin_inset Formula $T_{d}=T_{2}=0$
+\end_inset
+
+, so no deringing is performed.
+ 
+\end_layout
+
+\begin_layout Section
+Superblocks and Signaling
+\end_layout
+
+\begin_layout Standard
+The filtering is applied one superblock at a time, in a way that depends
+ on the level 
+\begin_inset Formula $\ell$
+\end_inset
+
+.
+ The level can take one of 6 values: 
+\begin_inset Formula 
+\begin{equation}
+\ell\in\left\{ 0,\,0.5,\,0.7,\,1.0,\,1.4,\,2.0\right\} \ ,
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula $\ell=0$
+\end_inset
+
+ disables the deringing filter for the current superblock.
+ The level is the only information coded in the bitstream by the deringing
+ filter.
+ On keyframes, it is entropy-coded based on the neighbor values.
+ On inter-predicted frames, the level is only coded for superblocks that
+ are not skipped and is entropy-coded based on a single adapted probability
+ distribution (no context from the neighbors).
+ Superblocks where no level is coded have deringing disabled.
+ Similarly, any skipped block within a superblock has deringing disabled,
+ even if it is signaled enabled for the superblock.
+ 
+\end_layout
+
+\begin_layout Standard
+The level of the deringing filter in AV1 is handled similarly, except that
+ only four levels are currently available and there is no entropy coding
+ yet.
+\end_layout
+
+\begin_layout Standard
+The deringing process sometimes reads pixels that lie outside of the superblock
+ being processed.
+ When these pixels belong to another superblock, the filtering always uses
+ the unfiltered pixel values -- even for the second stage filter -- so that
+ no dependency is added between the superblocks.
+ This makes it possible to filter all superblocks in parallel.
+ When the pixels used for a filter lie outside of the viewable image, we
+ set 
+\begin_inset Formula $f\left(d,T\right)=0$
+\end_inset
+
+ in Eq.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:threshold-function"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Section
+Results
+\end_layout
+
+\begin_layout Standard
+The deringing filter described here has been implemented for the Daala
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Daala"
+
+\end_inset
+
+ codec and is available in the master branch of the Daala Git repository
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Daala-Git"
+
+\end_inset
+
+.
+ Its implementation lies in the 
+\family typewriter
+src/dering.c
+\family default
+ file.
+ An example of the effect of the deringing filter at low bitrate on a still
+ image is shown in Fig.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Visual-effect"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide true
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename dering_off_crop.png
+	width 48text%
+
+\end_inset
+
+ 
+\begin_inset Graphics
+	filename clovis_off.png
+	width 48text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename dering_on_crop.png
+	width 48text%
+
+\end_inset
+
+ 
+\begin_inset Graphics
+	filename clovis_on.png
+	width 48text%
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Visual effect of deringing at low bitrate for Daala.
+ Top: without deringing, bottom: with deringing.
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Visual-effect"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We tested the deringing filter using the Are We Compressed Yet?
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "AWCY"
+
+\end_inset
+
+ online testing tool.
+ The results for still images are shown in Table.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:bd-rate-subset1"
+
+\end_inset
+
+ for the subset1 test set and those for video are shown in Table
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:bd-rate-ntt-short1"
+
+\end_inset
+
+ for the ntt-short1 test set.
+ Visual inspection confirms that the quality is greatly improved, despite
+ the regression in the FAST-SSIM results.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Deringing filter Bjøntegaard-delta
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Testing-draft"
+
+\end_inset
+
+ rate for still images (lower is better) in Daala.
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:bd-rate-subset1"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="4" columns="5">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Bitrate (bpp)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PSNR
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PSNR-HVS
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SSIM
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FAST-SSIM
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.1 -- 0.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-3.5%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-2.8%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.6%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++2.6%
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.2 -- 0.5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-2.9%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-2.2%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.6%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++3.2%
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.5 -- 1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.7%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-0.9%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.0%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++3.6%
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Deringing filter Bjøntegaard-delta
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Testing-draft"
+
+\end_inset
+
+ rate for video sequences (lower is better) in Daala.
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:bd-rate-ntt-short1"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="4" columns="5">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Bitrate (bpp)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PSNR
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PSNR-HVS
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SSIM
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FAST-SSIM
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.005 -- 0.02
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-5.8%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-4.3%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-4.0%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++7.2%
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.02 -- 0.06
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-7.4%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-4.7%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-5.8%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++11.5%
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.06 -- 0.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-7.9%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-5.0%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-7.7%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++12.2%
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Deringing filter Bjøntegaard-delta
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Testing-draft"
+
+\end_inset
+
+ rate for still images (lower is better) in AOM codec.
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:aom-bd-rate-subset1"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="3" columns="5">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Bitrate (bpp)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PSNR
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PSNR-HVS
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SSIM
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FAST-SSIM
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.2 -- 0.5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-2.0%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.4%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-0.9%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++2.8%
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.5 -- 1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-0.9%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-0.5%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-0.6%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++1.5%
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Deringing filter Bjøntegaard-delta
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Testing-draft"
+
+\end_inset
+
+ rate for video sequences (lower is better) in AOM codec.
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:aom-bd-rate-ntt-short1"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="3" columns="5">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Bitrate (bpp)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PSNR
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PSNR-HVS
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SSIM
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FAST-SSIM
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.02 -- 0.06
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-2.5%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.5%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.5%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++3.8%
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.06 -- 0.2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-2.0%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-0.8%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-1.3%
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
++3.1%
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Conclusion
+\end_layout
+
+\begin_layout Standard
+We have demonstrated an effective algorithm for removing ringing artifacts
+ from coded images and videos.
+ The proposed filter is based on the conditional replacement filter (CRF)
+ and takes into account the direction of the patterns it is filtering to
+ reduce the risk of blurring.
+ Objective results show a bit-rate reduction between 4% and 8% on video
+ sequences.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "daala"
+options "IEEEtran"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
