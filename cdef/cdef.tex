@@ -162,7 +162,7 @@ y\left(n\right)=\frac{1}{W}\sum_{k=-M}^{k=M}w_{k}x\left(n+k\right)\ ,\label{eq:l
 \end{equation}
 where $W=\sum_{k=-M}^{M}w_{k}$. Although it removes noise from a
 signal, it also blurs any details and sharp edges, which is undesirable.
-Bilateral filters avoid the blurring effect by making each weights
+Bilateral filters avoid the blurring effect by making each weight
 $w_{k}$ dependent on the difference signal $x\left(n+k\right)-x\left(n\right)$,
 typically using a Gaussian function. One disadvantage of this approach
 is that it requires keeping track of the sum of the weights for each
@@ -171,21 +171,32 @@ $\frac{1}{W}$ normalization factor for each pixel, making vectorization
 harder. 
 
 Rather than change the $w_{k}$ values, the conditional replacement
-filter changes the signal $x\left(n+k\right)$ used in the filter.
-When filtering sample $n$, any of the $x\left(n+k\right)$ tap inputs
-that differs from $x\left(n\right)$ by more than a threshold $T$,
-is replaced by $x\left(n\right)$ in the calculation:
+filter changes the signal $x\left(n+k\right)$ used in the filter:
+
 \begin{equation}
-y\left(n\right)=\frac{1}{W}\sum_{k=-M}^{k=M}w_{k}R\left(x\left(n\right),x\left(n+k\right),T\right)\ ,\label{eq:crf-definition}
+y\left(n\right)=x\left(n\right)+\frac{1}{W}\sum_{k=-M,k\neq0}^{k=M}w_{k}f\left(x\left(n+k\right)-x\left(n\right),T\right)\ \label{eq:conditional-replacement-diff}
 \end{equation}
-with
+with the threshold function $f$ taking as arguments the change $d$, a threshold $T$ and a damping strength $D$:
 \begin{equation}
-R\left(x_{0},x_{k},T\right)=\begin{cases}
-x_{k} & ,\left|x_{k}-x_{0}\right|<T\\
-x_{0} & ,\mathrm{otherwise}
-\end{cases}\ .\label{eq:crf-replacement}
+f\left(d, T, D\right)=\left\{ \begin{array}{ll}
+\min\left(d, \max\left(0, T-\lfloor{\frac{d}{2^{D-\lfloor{\log_{2}T}\rfloor}}}\rfloor\right)\right) &, d>=0\\
+\max\left(d, \min\left(0, \lceil{\frac{-d}{2^{D-\lfloor{\log_{2}T}\rfloor}}\rceil-T}\right)\right) &, d<0
+\end{array}\right. \label{eq:threshold-function}
 \end{equation}
- The filter computation is illustrated in Fig.~\ref{fig:Conditional-filter-computation}
+
+The advantage of this formulation is that the normalization by $\frac{1}{W}$
+can be approximated without causing any bias (DC offset), even when
+$W$ is not a power of two. Also, because $W$ does not depend on
+the number of pixels being replaced, the normalization is easy to
+vectorize over a row (or column) of pixels.
+
+The threshold function is symmetric around $0$ and it can be expressed by the following C like pseudo code:
+\begin{verbatim}
+   sign(x) = x >= 0 ? 1 : -1
+   f(d, T, D) = sign(d) * min(abs(d), max(0, T - (abs(d) >> (D - floor(log2(T))))))
+\end{verbatim}
+
+The filter computation is illustrated in Fig.~\ref{fig:Conditional-filter-computation}
 and an example is shown in Fig.~\ref{fig:Conditional-filter-example}.
 
 \begin{figure}
@@ -208,24 +219,6 @@ bottom-right: filtered with 7-tap conditional replacement filter.
 \label{fig:Conditional-filter-example}}
 \end{figure}
 
-Through algebraic simplifications, we can express the filter (\ref{eq:crf-definition})
-in terms of the differences $x\left(n+k\right)-x\left(n\right)$,
-which yields
-\begin{equation}
-y\left(n\right)=x\left(n\right)+\frac{1}{W}\sum_{k=-M,k\neq0}^{k=M}w_{k}f\left(x\left(n+k\right)-x\left(n\right),T\right)\ ,\label{eq:conditional-replacement-diff}
-\end{equation}
-with the threshold function 
-\begin{equation}
-f\left(d,T\right)=\left\{ \begin{array}{ll}
-d & ,\left|d\right|<T\\
-0 & ,\mathrm{otherwise}
-\end{array}\right.\ .\label{eq:threshold-function}
-\end{equation}
-The advantage of this formulation is that the normalization by $\frac{1}{W}$
-can be approximated without causing any bias (DC offset), even when
-$W$ is not a power of two. Also, because $W$ does not depend on
-the number of pixels being replaced, the normalization is easy to
-vectorize over a row (or column) of pixels. 
 
 The directional filter for pixel $\left(i,j\right)$ is defined as
 the 7-tap conditional replacement filter
