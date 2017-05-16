@@ -6,7 +6,6 @@
 \usepackage{geometry}
 \usepackage{algorithmic}
 \usepackage{varwidth}
-\usepackage{listings}
 \geometry{verbose,tmargin=2cm,bmargin=2cm,lmargin=2cm,rmargin=2cm}
 \usepackage{amsmath}
 \usepackage{graphicx}
@@ -415,7 +414,7 @@ For each 8x8 block, the following steps are applied.
 The direction search evaluates equation (\ref{eq:direction-variance3})
 for each of the 8 directions, with the $\frac{1}{N_{d,k}}$ factor
 being replaced by a 10-bit multiply. The step-by-step process is described
-in algorithm~\ref{cap:direction-search}. A C implementation is shown in Appendix~\ref{direction-search-code}
+in algorithm~\ref{cap:direction-search}.
 
 In total, the search for all
 8 directions requires the following arithmetic operations:
@@ -445,18 +444,23 @@ to each of these sums.
   \FOR{$i=0$ to $7$}
     \FOR{$j=0$ to $7$}
       \STATE $L \leftarrow \textrm{line\_table}[d][i][j]$
-      \STATE $\textrm{partial}[d][L] \leftarrow \textrm{partial}[d][L] + \textrm{pixel}[i][j] - 128$
+      \STATE $\textrm{partial}[d][L] \leftarrow \textrm{partial}[d][L] + \lfloor{\textrm{pixel}[i][j] \cdot 2^{8 - \textrm{bitdepth}}\rfloor - 128}$
       \STATE $\textrm{count}[d][L] \leftarrow \textrm{count}[d][L] + 1$
     \ENDFOR
   \ENDFOR
-  \FOR{$L=0$ to $15$}
+  \FOR{$L=0$ to $14$}
     \IF{$\textrm{count}[d][L] > 0$}
-      \STATE $s[d] \leftarrow s[d] + (\textrm{partial}[d][L])^2\cdot 840/\textrm{count}[d][L]$
+      \STATE $s[d] \leftarrow s[d] + \textrm{partial}[d][L]^2\cdot 840/\textrm{count}[d][L]$
     \ENDIF
   \ENDFOR
 \ENDFOR
-\STATE $\textrm{direction} \leftarrow \underset{d}{\textrm{find\_max}}  \left(s[d]\right)$
-\STATE $\textrm{var} \leftarrow s[d] - s[(d+4) \mod 8]$
+\FOR{$d=0$ to $7$}
+  \IF{$s[d] > s[\textrm{best\_}d]$}
+    \STATE $\textrm{best\_}d \leftarrow d$ 
+  \ENDIF
+\ENDFOR
+\STATE $\textrm{direction} \leftarrow \textrm{best\_}d$
+\STATE $\textrm{variance} \leftarrow s[\textrm{best\_}d] - s[(\textrm{best\_}d+4) \mod 8]$
 \end{algorithmic}
 \end{varwidth}% 
 }
@@ -464,7 +468,7 @@ to each of these sums.
 \caption{Direction search. The line\_table[$d$][$i$][$j$] values are the line numbers shown
 in Fig.~\ref{fig:Lines-for-direction}. Note that in a practical implementation,
 the $840/\textrm{count}[d][L]$ term does not need to be computed, since it
-only depends on $d$ and $L$\label{cap:direction-search}}
+only depends on $d$ and $L$\label{cap:direction-search}.}
 \end{algorithm}
 
 
@@ -536,100 +540,5 @@ show a bit-rate reduction up to 7.7\% on video sequences.
 \bibliographystyle{IEEEtran}
 \bibliography{daala}
 
-\begin{appendix}
-\subsection{Direction Search}
-\label{direction-search-code}
 
-\lstdefinestyle{customc}{
-  belowcaptionskip=1\baselineskip,
-  breaklines=true,
-  frame=L,
-  xleftmargin=\parindent,
-  language=C,
-  showstringspaces=false,
-  basicstyle=\footnotesize\ttfamily,
-  keywordstyle=\bfseries\color{green!40!black},
-  commentstyle=\itshape\color{purple!40!black},
-  identifierstyle=\color{blue},
-  stringstyle=\color{orange},
-}
-
-\lstset{language=C}
-
-The following example C code computes the direction on an 8x8 block. 
-
-\begin{lstlisting}
-int od_dir_find8(const uint16_t *img, int stride, int32_t *var,
-                   int coeff_shift) {
-  int i;
-  int32_t cost[8] = { 0 };
-  int partial[8][15] = { { 0 } };
-  int32_t best_cost = 0;
-  int best_dir = 0;
-  /* Instead of dividing by n between 2 and 8, we multiply by 3*5*7*8/n.
-     The output is then 840 times larger, but we don't care for finding
-     the max. */
-  static const int div_table[] = { 0, 840, 420, 280, 210, 168, 140, 120, 105 };
-  for (i = 0; i < 8; i++) {
-    int j;
-    for (j = 0; j < 8; j++) {
-      int x;
-      /* We subtract 128 here to reduce the maximum range of the squared
-         partial sums. */
-      x = (img[i * stride + j] >> coeff_shift) - 128;
-      partial[0][i + j] += x;
-      partial[1][i + j / 2] += x;
-      partial[2][i] += x;
-      partial[3][3 + i - j / 2] += x;
-      partial[4][7 + i - j] += x;
-      partial[5][3 - i / 2 + j] += x;
-      partial[6][j] += x;
-      partial[7][i / 2 + j] += x;
-    }
-  }
-  for (i = 0; i < 8; i++) {
-    cost[2] += partial[2][i] * partial[2][i];
-    cost[6] += partial[6][i] * partial[6][i];
-  }
-  cost[2] *= div_table[8];
-  cost[6] *= div_table[8];
-  for (i = 0; i < 7; i++) {
-    cost[0] += (partial[0][i] * partial[0][i] +
-                partial[0][14 - i] * partial[0][14 - i]) *
-               div_table[i + 1];
-    cost[4] += (partial[4][i] * partial[4][i] +
-                partial[4][14 - i] * partial[4][14 - i]) *
-               div_table[i + 1];
-  }
-  cost[0] += partial[0][7] * partial[0][7] * div_table[8];
-  cost[4] += partial[4][7] * partial[4][7] * div_table[8];
-  for (i = 1; i < 8; i += 2) {
-    int j;
-    for (j = 0; j < 4 + 1; j++) {
-      cost[i] += partial[i][3 + j] * partial[i][3 + j];
-    }
-    cost[i] *= div_table[8];
-    for (j = 0; j < 4 - 1; j++) {
-      cost[i] += (partial[i][j] * partial[i][j] +
-                  partial[i][10 - j] * partial[i][10 - j]) *
-                 div_table[2 * j + 2];
-    }
-  }
-  for (i = 0; i < 8; i++) {
-    if (cost[i] > best_cost) {
-      best_cost = cost[i];
-      best_dir = i;
-    }
-  }
-  /* Difference between the optimal variance and the variance along the
-     orthogonal direction. Again, the sum(x^2) terms cancel out. */
-  *var = best_cost - cost[(best_dir + 4) & 7];
-  /* We'd normally divide by 840, but dividing by 1024 is close enough
-     for what we're going to do with this. */
-  *var >>= 10;
-  return best_dir;
-}
-\end{lstlisting}
-
-\end{appendix}
 \end{document}
