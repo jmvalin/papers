@@ -1,11 +1,13 @@
 %% LyX 2.2.2 created this file.  For more info, see http://www.lyx.org/.
 %% Do not edit unless you really know what you are doing.
 \documentclass[english,conference,onecolumn]{IEEEtran}
+\usepackage{array}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{geometry}
 \usepackage{algorithmic}
 \usepackage{varwidth}
+\usepackage{listings}
 \geometry{verbose,tmargin=2cm,bmargin=2cm,lmargin=2cm,rmargin=2cm}
 \usepackage{amsmath}
 \usepackage{graphicx}
@@ -14,6 +16,9 @@
 \floatname{algorithm}{Algorithm}
 
 \makeatletter
+
+\newcolumntype{C}{>{\centering\arraybackslash}p{0.8em}}
+\newcolumntype{X}{>{\centering\arraybackslash}p{16em}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
 %% Because html converters don't know tabularnewline
@@ -35,14 +40,15 @@
 \maketitle
 \begin{abstract}
 This paper presents the constrained directional enhancement filter
-designed for the AV1 royalty-free video codec. The filter is based
-on a non-linear conditional replacement filter and is designed for
-vectorization efficiency. It takes into account the direction of edges
-and patterns being filtered. The filter works by identifying the direction
-of each block and then adaptively filtering along the identified direction.
-In a second pass, the blocks are also filtered with a constrained
-low-pass filter. The proposed deringing filter is shown to improve
-the quality of the Alliance for Open Media (AOM) AV1 video codec.
+designed for the AV1 royalty-free video codec. The filter is based on
+a non-linear low-pass filter and is designed for vectorization
+efficiency. It takes into account the direction of edges and patterns
+being filtered. The filter works by identifying the direction of each
+block and then adaptively filtering along the identified direction.
+In a second pass, the blocks a similar but weaker, directionless
+filter is applied. The proposed enhancement or deringing filter is
+shown to improve the quality of the Alliance for Open Media (AOM) AV1
+video codec.
 \end{abstract}
 
 
@@ -157,88 +163,267 @@ shown are never computed in practice (only $s_{d}$ is). \label{fig:Example-of-di
 \end{figure}
 
 
-\section{Conditional Replacement Filter}
+\newpage
 
-The conditional replacement filter is designed to remove noise without
-blurring sharp edges. A low-pass finite impulse response (FIR) filter
-with $\left(2M+1\right)$ taps in one dimension can be expressed as
+\section{Non-linear Low-pass Filter}
+
+\subsection{Detailed description}
+
+The non-linear low-pass is designed to remove coding artifacts without
+blurring sharp edges.  This is achieved by selecting taps based on the
+identified direction and selecting filter strengths along and across
+the direction independently.  The filter can be expressed as
 \begin{equation}
-y\left(n\right)=\frac{1}{W}\sum_{k=-M}^{k=M}w_{k}x\left(n+k\right)\ ,\label{eq:linear-filter}
+y\left(i, j\right)=round(x(i, j) + \sum_{m,n \in R}w_{m,n}f(x\left(i, j) - x(m,n\right)))\label{eq:linear-filter}
 \end{equation}
-where $W=\sum_{k=-M}^{M}w_{k}$. Although it removes noise from a
-signal, it also blurs any details and sharp edges, which is undesirable.
-Bilateral filters avoid the blurring effect by making each weight
-$w_{k}$ dependent on the difference signal $x\left(n+k\right)-x\left(n\right)$,
-typically using a Gaussian function. One disadvantage of this approach
-is that it requires keeping track of the sum of the weights for each
-sample $n$ being filtered. It also results in having a different
-$\frac{1}{W}$ normalization factor for each pixel, making vectorization
-harder. 
+where $R$ contains pixels in the neighbourhood of $x(i, j)$ with the
+real-valued, non-zero coefficients $w_{m,n}$, $f$ is
+a non-linear function described below, and $round(x)$ rounds $x$ to the
+nearest integer (towards zero).
 
-Rather than change the $w_{k}$ values, the conditional replacement
-filter changes the signal $x\left(n+k\right)$ used in the filter:
-
+The function $f$ constrains the difference of the pixel to be filtered
+and a neighbouring pixel.  It takes arguments the difference $d$, a
+strength $S$ and a damping value $D$:
 \begin{equation}
-y\left(n\right)=x\left(n\right)+\frac{1}{W}\sum_{k=-M,k\neq0}^{k=M}w_{k}f\left(x\left(n+k\right)-x\left(n\right),T\right)\ \label{eq:conditional-replacement-diff}
+f\left(d, S, D\right)=\left\{ \begin{array}{ll}
+\min\left(d, \max\left(0, S-\lfloor{\frac{d}{2^{D-\lfloor{\log_{2}S}\rfloor}}}\rfloor\right)\right) &, d>=0\\
+\max\left(d, \min\left(0, \lceil{\frac{-d}{2^{D-\lfloor{\log_{2}S}\rfloor}}\rceil-S}\right)\right) &, d<0
+\end{array}\right. \label{eq:constraint-function}
 \end{equation}
-with the threshold function $f$ taking as arguments the change $d$, a threshold $T$ and a damping strength $D$:
-\begin{equation}
-f\left(d, T, D\right)=\left\{ \begin{array}{ll}
-\min\left(d, \max\left(0, T-\lfloor{\frac{d}{2^{D-\lfloor{\log_{2}T}\rfloor}}}\rfloor\right)\right) &, d>=0\\
-\max\left(d, \min\left(0, \lceil{\frac{-d}{2^{D-\lfloor{\log_{2}T}\rfloor}}\rceil-T}\right)\right) &, d<0
-\end{array}\right. \label{eq:threshold-function}
-\end{equation}
-
-The advantage of this formulation is that the normalization by $\frac{1}{W}$
-can be approximated without causing any bias (DC offset), even when
-$W$ is not a power of two. Also, because $W$ does not depend on
-the number of pixels being replaced, the normalization is easy to
-vectorize over a row (or column) of pixels.
-
-The threshold function is symmetric around $0$ and it can be expressed by the following C like pseudo code:
+The strength $S$ controls the maximum difference allowed minus a
+ramp-down controlled by $D$.  The effect of $f$ with strengths $1$,
+$2$ and $4$ and a damping value of $5$ is illustrated in
+figure~\ref{fig:constraint-function}.  The function is symmetric for
+$d$ values around $0$ and it can be expressed by the following pseudo
+C code:
 \begin{verbatim}
    sign(x) = x >= 0 ? 1 : -1
    f(d, T, D) = sign(d) * min(abs(d), max(0, T - (abs(d) >> (D - floor(log2(T))))))
 \end{verbatim}
 
-The filter computation is illustrated in Fig.~\ref{fig:Conditional-filter-computation}
-and an example is shown in Fig.~\ref{fig:Conditional-filter-example}.
+
+
 
 \begin{figure}
-\centering{\includegraphics[width=0.5\textwidth]{crf_def}}
+\centering{\includegraphics[width=0.7\textwidth]{clpf_func}}
 
-\caption{Conditional replacement filter computation\label{fig:Conditional-filter-computation}}
-
-\end{figure}
-
-\begin{figure}
-\centering{\includegraphics[width=0.3\columnwidth]{crf_orig}\hspace{2mm}\includegraphics[width=0.3\columnwidth]{crf_noisy}
-
-\vspace{2mm}
-
-\includegraphics[width=0.3\columnwidth]{crf_linear}\hspace{2mm}\includegraphics[width=0.3\columnwidth]{crf_out}}
-
-\caption{Conditional replacement filter example. Up-left: original signal,
-up-right: noisy signal, bottom-left: filtered with 7-tap linear filter,
-bottom-right: filtered with 7-tap conditional replacement filter.
-\label{fig:Conditional-filter-example}}
+\caption{Constraint function\label{fig:constraint-function}}
 \end{figure}
 
 
-The directional filter for pixel $\left(i,j\right)$ is defined as
-the 7-tap conditional replacement filter
-\begin{multline}
-y\left(i,j\right)=x\left(i,j\right)+\frac{1}{W}\sum_{k=-3,\,k\neq0}^{3}w_{k}f\left[x\left(i,j\right)-\right.\\
-\left.x\left(i+\left\lfloor kd_{y}\right\rfloor ,j+\left\lfloor kd_{x}\right\rfloor \right),T_{d}\right]\label{eq:directional_filter}
-\end{multline}
-where $d_{x}$ and $d_{y}$ define the direction, $W$ is a constant
-normalizing factor, $T_{d}$ is the filtering threshold for the block.
-The direction parameters are shown in Table~\ref{tab:Direction-parameters}.
-The weights $w_{k}$ can be chosen so that $W$ is a power of two.
-For example, Daala currently uses $\mathbf{w}=\left[\begin{array}{ccccccc}
-1 & 2 & 3 & \left(4\right) & 3 & 2 & 1\end{array}\right]$ (where the middle value of 4 is implicit) with $W=16$. Since the
-direction is constant over $8\times8$ blocks, all operations in this
-filter are directly vectorizable over the blocks. 
+
+The filtering of a frame is done in two passes.  The second pass
+filters the result of the first pass.  To distuingish the two passes
+we define \textit{primary taps} in $R'$ and \textit{secondary taps} in
+$R''$ which have their associated strengths $S'$ and $S''$
+respectively and likewise damping values $D'$ and $D''$.
+
+
+Both $R'$ and $R''$ depend on the direction identified by the index
+shown in table~\ref{tab:Direction-parameters}.  $R'$ has the following
+taps (the values for $w'$ are shown for their pixels relative to the filter $x$ to be filtered):
+
+
+
+\def\arraystretch{1.72}
+
+\begin{table}[htb]
+  \centering
+  \begin{tabular}{XXXX}
+$index=0$:
+\noindent\begin{tabular}{|C|C|C|C|C|C|C|}
+\hline
+&  &   &   &   &  & $\frac{1}{16}$ \tabularnewline
+\hline
+&  &   &   &   &  $\frac{2}{16}$ & \tabularnewline
+\hline
+&  &      &          & $\frac{3}{16}$ & &  \tabularnewline
+\hline
+&  &      & $x$ &   & &   \tabularnewline
+\hline
+&  & $\frac{3}{16}$ &          &   & &  \tabularnewline
+\hline
+& $\frac{2}{16}$ &   &   &   &  &  \tabularnewline
+\hline
+$\frac{1}{16}$ & &  &   &   &  &  \tabularnewline
+\hline
+\end{tabular}
+&
+$index=1$:
+\noindent\begin{tabular}{|C|C|C|C|C|C|C|}
+\hline
+&  &   &     &   & &  \tabularnewline
+\hline
+&  &   &     &   & &  \tabularnewline
+\hline
+&  &   &     &   & $\frac{2}{16}$ & $\frac{1}{16}$ \tabularnewline
+\hline
+&  & $\frac{3}{16}$  & $x$ & $\frac{3}{16}$  & &  \tabularnewline
+\hline
+ $\frac{1}{16}$ & $\frac{2}{16}$  &   &     &   &  & \tabularnewline
+\hline
+& &   &     &   & &  \tabularnewline
+\hline
+& &   &     &   & &  \tabularnewline
+\hline
+\end{tabular}
+\tabularnewline
+$index=2$:
+\noindent\begin{tabular}{|C|C|C|C|C|C|C|}
+\hline
+&  &   &     &   & &  \tabularnewline
+\hline
+&  &   &     &   & &  \tabularnewline
+\hline
+&  &   &     &   & &  \tabularnewline
+\hline
+$\frac{1}{16}$ & $\frac{2}{16}$ & $\frac{3}{16}$  & $x$ &  $\frac{3}{16}$ & $\frac{2}{16}$ & $\frac{1}{16}$ \tabularnewline
+\hline
+&  &   &     &   & &  \tabularnewline
+\hline
+&  &   &     &   & &  \tabularnewline
+\hline
+&  &   &     &   & &  \tabularnewline
+\hline
+\end{tabular}
+&
+$index=3$:
+\noindent\begin{tabular}{|C|C|C|C|C|C|C|}
+\hline
+&  &   &     &   &  & \tabularnewline
+\hline
+&  &   &     &   &  & \tabularnewline
+\hline
+$\frac{1}{16}$ & $\frac{2}{16}$  &   &     &   & &  \tabularnewline
+\hline
+&   & $\frac{3}{16}$  & $x$ & $\frac{3}{16}$  & &  \tabularnewline
+\hline
+&  &   &     &   & $\frac{2}{16}$  &  $\frac{1}{16}$  \tabularnewline
+\hline
+&  &   &     &   &  & \tabularnewline
+\hline
+&  &   &     &   &  & \tabularnewline
+\hline
+\end{tabular}
+\tabularnewline
+$index=4$:
+\noindent\begin{tabular}{|C|C|C|C|C|C|C|}
+\hline
+$\frac{1}{16}$  &   &     &   & & & \tabularnewline
+\hline
+& $\frac{2}{16}$  &   &     &   & &  \tabularnewline
+\hline
+&   & $\frac{3}{16}$  &     &   & &  \tabularnewline
+\hline
+&  &   & $x$ &   &  & \tabularnewline
+\hline
+&  &   &     & $\frac{3}{16}$  & &  \tabularnewline
+\hline
+&  &   &     &   & $\frac{2}{16}$ & \tabularnewline
+\hline
+&  &   &     &   & & $\frac{1}{16}$ \tabularnewline
+\hline
+\end{tabular}
+&
+$index=5$:
+\noindent\begin{tabular}{|C|C|C|C|C|C|C|}
+\hline
+&  & $\frac{1}{16}$  &     &   & &  \tabularnewline
+\hline
+&  & $\frac{2}{16}$  &     &   & &  \tabularnewline
+\hline
+&  &   &  $\frac{3}{16}$   &   & &  \tabularnewline
+\hline
+&  &   & $x$ &   & &  \tabularnewline
+\hline
+&  &   &  $\frac{3}{16}$   &   & &  \tabularnewline
+\hline
+&  &   &     & $\frac{2}{16}$  & &  \tabularnewline
+\hline
+&  &   &     & $\frac{1}{16}$  & &  \tabularnewline
+\hline
+\end{tabular}
+\tabularnewline
+$index=6$:
+\noindent\begin{tabular}{|C|C|C|C|C|C|C|}
+\hline
+&  &   &  $\frac{1}{16}$   &   & &  \tabularnewline
+\hline
+&  &   &  $\frac{2}{16}$   &   & &  \tabularnewline
+\hline
+&  &   &  $\frac{3}{16}$   &   & &  \tabularnewline
+\hline
+&  &   & $x$ &   & &  \tabularnewline
+\hline
+&  &   &  $\frac{3}{16}$   &   & &  \tabularnewline
+\hline
+&  &   &  $\frac{2}{16}$   &   & &  \tabularnewline
+\hline
+&  &   &  $\frac{1}{16}$   &   & &  \tabularnewline
+\hline
+\end{tabular}
+&
+$index=7$:
+\noindent\begin{tabular}{|C|C|C|C|C|C|C|}
+\hline
+&  &   &     & $\frac{1}{16}$  & &  \tabularnewline
+\hline
+&  &   &     & $\frac{2}{16}$  & &  \tabularnewline
+\hline
+&  &   &  $\frac{3}{16}$   &   & &  \tabularnewline
+\hline
+&  &   & $x$ &   & &  \tabularnewline
+\hline
+&  &   &  $\frac{3}{16}$   &   & &  \tabularnewline
+\hline
+&  & $\frac{2}{16}$  &     &   & &  \tabularnewline
+\hline
+&  & $\frac{1}{16}$  &     &   & &  \tabularnewline
+\hline
+\end{tabular}
+\end{tabular}
+\end{table}
+
+
+In order to limit the line buffer requirements due to the
+dual pass nature of this filter, $R''$ has the taps $w''$:
+
+\begin{table}[htb]
+  \centering
+\begin{tabular}{XXXX}
+$index=1, 2, 3$ or $S' = 0$:
+\noindent\begin{tabular}{|C|C|C|C|C|}
+\hline
+  &   & $\frac{1}{16}$    &   &   \tabularnewline
+\hline
+  &   & $\frac{3}{16}$    &   &   \tabularnewline
+\hline
+$\frac{1}{16}$  & $\frac{3}{16}$  & $x$ & $\frac{3}{16}$  & $\frac{1}{16}$  \tabularnewline
+\hline
+  &   & $\frac{3}{16}$    &   &   \tabularnewline
+\hline
+  &   & $\frac{1}{16}$    &   &   \tabularnewline
+\hline
+\end{tabular}
+&
+$index=0, 4, 5, 6, 7$ and $S' > 0$:
+\noindent\begin{tabular}{|C|C|C|C|C|}
+\hline
+  &   &    &   &   \tabularnewline
+\hline
+  &   &    &   &   \tabularnewline
+\hline
+$\frac{1}{8}$  & $\frac{3}{8}$  & $x$ & $\frac{3}{8}$  & $\frac{1}{8}$  \tabularnewline
+\hline
+  &   &   &   &   \tabularnewline
+\hline
+  &   &   &   &   \tabularnewline
+\hline
+\end{tabular}
+\end{tabular}
+\end{table}
+
+\def\arraystretch{1}
 
 \begin{table}
 \caption{Direction parameters\label{tab:Direction-parameters}}
@@ -260,168 +445,138 @@ Index & Direction & $d_{x}$ & $d_{y}$\tabularnewline
 
 \end{table}
 
-\begin{figure}
-\centering{\includegraphics[width=0.3\columnwidth]{crf_direction}}
 
-\caption{Filtering along the direction (left)\label{fig:Filtering-along-across}. }
-\end{figure}
+\subsection{Valid strengths and damping values}
+
+The strengths $S'$ and $S''$ and damping values $D'$ and $D''$ must be
+set high enough to smooth out coding artifacts, but low enough to
+avoid blurring important details in the image.  For 8 bit content $S'$
+can have integer values between $0$ and $15$, and $S''$ can be $0$,
+$1$, $2$ or $4$.  $D'$ and $D''$ can be set to $3$, $4$, $5$ or $6$
+for luma, and the damping value for chroma is always one less.
+
+For content above 8 bit, $S'$ and $S''$ must be scaled according to
+the extra bit depth, and $D'$ and $D''$ offset corresponingly, so for
+12 bit content $S'$ can have the values $0$, $16$, $32$, $...$, $240$,
+and $D'$ can have the values $9$ and $10$.  Picking optimial damping
+values is less critical for compression gains than picking the optimal
+strengths.  $S'$, $S''$, $D'$ and $D''$ are are set independently for
+luma and chroma.
 
 
-\subsection{Setting the Threshold}
-
-The threshold $T_{d}$ must be set high enough to smooth out ringing
-artifacts, but low enough to avoid blurring important details in the
-image. Although the ringing is \emph{roughly} proportional to the
-quantization step size $Q$, as the quantizer increases the error
-grows slightly less than linearly because the unquantized coefficients
-become very small compared to $Q$. As a starting point for determining
-the thresholds, we can use a power model of the form
-\begin{equation}
-T_{0}=\alpha_{1}Q^{\beta}\ell\ ,\label{eq:setting-Td}
-\end{equation}
-with $\beta=0.6$, and where $\alpha_{1}$ depends on the input scaling.
-The deringing \emph{level} $\ell$ is a threshold adjustment coded
-for each superblock ($64\times64$). The level can take one of 4 values:
-\begin{equation}
-\ell\in\left\{ 0,\,11/16,\,1,\,22/16\right\} \ ,
-\end{equation}
-where $\ell=0$ disables the deringing filter for the current superblock. 
-
-Another factor that affects the optimal filtering threshold is the
-presence of strong directional edges/patterns. These can be estimated
-from the $s_{d}$ parameters computed in Eq.~(\ref{eq:direction-variance3})
-as
-\begin{equation}
-\delta=s_{d_{opt}}-s_{d_{ortho}}\ ,\label{eq:variande-delta}
-\end{equation}
-where $d_{ortho}=d_{opt}+4\ \left(\mathrm{mod}\,8\right)$. We compute
-the direction filtering threshold for each block as 
-\begin{equation}
-T_{d}=T_{0}\cdot\max\left(\tfrac{1}{2},\min\left(3,\alpha_{2}\delta^{1/6}\right)\right)\ ,\label{eq:threshold-pow}
-\end{equation}
-where $\alpha_{2}$ also depends on the input scaling. 
-
-As a special case, when the pixels corresponding to the $8\times8$
-block being filtered are all skipped, then $T_{d}=0$, so no deringing
-is performed. Aside from frame header information, the level $\ell$
-is the only information coded in the bitstream for the directional
-filter. More specifically, neither $\delta$ nor the direction $d$
-are coded, since they are computed by the decoder. The level is not
-currently entropy coded, but that is likely to change in the future. 
-
-\section{Constrained Low-Pass Filter}
-
-The 7-tap directional filter is sometimes not enough to eliminate
-all ringing, so we use an additional filtering step that operates
-across the direction lines used in the first filter. Considering that
-the input of the second filter has considerably less ringing than
-the input of the first filter, and the risk of blurring edges, the
-strength of the second filter needs to be smaller.
-
-The constrained low-pass filter (CLPF) used as the second filter is
-a variant of the conditional replacement filter. It is applied to
-the luma and chroma planes after the first directional filter. The
-filter block (FB) size and filter strength are signalled once per
-frame. Tile groups must signal the same values for FB size and strength.
-A value of 0 for the FB size means that FB signalling is disabled
-(see below) and 1, 2 and 3 mean that the FB size is 32x32, 64x64 and
-128x128 respectively. The filter strength can be 1, 2 or 4 (signalled
-as \textquotedblleft 3\textquotedblright ) for 8 bit content. For
-higher bit content the strength is scaled accordingly, so for 10 bit
-content the strengths are 4, 8 or 16. Skip blocks (blocks without
-residuals) are not filtered if the FB size is 32x32 or 64x64.
-
-The luma and chroma planes are filtered independently, each with its
-own strength, but only luma can have FB signalling. The filter can
-be enabled/disabled at FB level in the luma plane by sending one bit
-for a FB if the following conditions are true:
-\begin{enumerate}
-\item FB-level signaling is enabled (FB size set to 32x32, 64x64 or 128x128) 
-\item The FB size is 128x128 or at least one block within the FB is not
-a skip block if the FB size is 32x32 or 64x64
-\end{enumerate}
-If a 32x32 or 64x64 FB is entirely made up of skip blocks, no bit
-is sent for that FB and it\textquoteright s not filtered.For blocks
-to be filtered the following operation is performed, where A, B, C,
-D, E, F, G, H and the pixel to be filtered X are organized in the
-pattern shown in Figure~\ref{fig:clpf_taps}, and $s$ denotes the
-filter strength: 
-
-\begin{align*}
-X'=X+[ & g\left(A-X,s\right)+3g\left(B-X,s\right)+\\
- & g\left(C-X,s\right)+3g\left(D-X,s\right)+\\
- & g\left(F-X,s\right)+3g\left(E-X,s\right)+\\
- & g\left(H-X,s\right)+3g\left(G-X,s\right)]/16
-\end{align*}
-where the constraint function is defined as
-\[
-g\left(d,s\right)=\mathrm{sign}\left(d\right)\max\left(0,\left|d\right|-\max\left(0,\left|d\right|-s+2^{3-B+\log_{2}s}\left|d\right|\right)\right)
-\]
-where $B$ is the bit depth (8-, 10-, or 12-bit). The constraint restricts
-the range gradually down to 0 as the pixel difference $\left|d\right|$
-approaches 32 (128, 512) for 8 (10, 12) bit content. The intention
-is to reduce the effect of dissimilar neighbouring pixels. Figure~\ref{fig:Constrain-function}
-illustrates the effect of the function.
-
-\begin{figure}
-
-\centering{\includegraphics[width=0.3\textwidth]{clpf}}
-
-\caption{Constrained low-pass fitler taps\label{fig:clpf_taps}}
-
-\end{figure}
-
-\begin{figure}
-\centering{\includegraphics[width=0.7\textwidth]{clpf_func}}
-
-\caption{Constrain function\label{fig:Constrain-function}}
-\end{figure}
-
-The filter rounds to the nearest integer. If an input pixel is outside
-the frame border, the nearest pixel inside the frame is used. When
-FB signalling is enabled, up to four bits are transmitted per superblock
-(SB) when the FB size is 32x32, 0 or 1 bit per SB if the FB size is
-64x64, and when the FB size is 128x128, there is always 1 bit for
-every top left SB of the FB. Note that when the size is 128x128, even
-skip blocks within the FB get filtered if the filter is enabled for
-the FB.
-
-As a way to reduce the number of buffered lines, we only use the horizontal
-taps of CLPF when the direction is 0, 4, 5, 6, or 7.
 
 \section{Superblocks and Signaling}
 
-The filtering is applied one superblock at a time. On inter-predicted
-frames, the filter parameters are only coded for superblocks that
-are not skipped. Superblocks where no level is coded have CDEF disabled.
-Similarly, any skipped block within a superblock has all filtering
-disabled, even if it is signaled enabled for the superblock. 
+Some CDEF parameters are signaled at the frame level, and some
+parameters may be signaled at the superblock level.  The following is
+signaled at the frame level: the primary damping $D'$ (2 bit) and
+secondary damping $D''$ (2 bits), the number of bits used for
+superblock signaling (0-3, 2 bits), and a list of 1, 2, 4, 8 or 16
+presets.  One preset contains luma primary filter strength (4 bits),
+chroma primary filter strength (4 bits), luma secondary filter
+strength (2 bits), chroma secondary filter strength, a luma skip
+condition bit, and a chroma skip condition bit (a total of 14 bits per
+preset).
 
-The CDEF process sometimes reads pixels that lie outside of the superblock
-being processed. When these pixels belong to another superblock, the
-filtering always uses the unfiltered pixel values \textendash{} even
-for the second filter (CLPF) \textendash{} so that no dependency is
-added between the superblocks. This makes it possible to filter all
-superblocks in parallel. When the pixels used for a filter lie outside
-of the viewable image, we set $f\left(d,T\right)=0$ in Eq.~(\ref{eq:threshold-function}).
+The filtering is applied in two passes one superblock at a time.  The
+second pass filters the result of the first pass, but pixels outside
+the superblock to be filtered remain the same as the input for the
+first pass.  This is to avoid dependencies between the superblocks and
+allows all superblocks to be filtered in parallel.  For each
+superblock, the 0 - 3 bits are read to indicate the preset that will
+be used for this superblock.  On inter-predicted frames, the filter
+parameters are only coded for superblocks that are not completely
+skipped.  Superblocks where no level is coded have CDEF disabled.
+Similarly, any skipped coding block within a superblock has filtering
+disabled if the skip condition bit is not set.
 
-\section{Decoder Process}
+When the pixels used for a filter lie outside of the viewable image,
+we set $f\left(d,S,D\right)=0$ in equation~\ref{eq:constraint-function}.
 
-For each 8x8 block, the following steps are applied.
+If the skip condition flag is set and the primary strength has been
+signaled as $0$, then the block shall be filtered with a primary
+filter strength equal to $31$.  The skip condition flag is still to be
+regarded as $1$.
+
+The bitstream syntax is summarized in tables~\ref{header_syntax}, \ref{params_syntax} and \ref{partition_syntax}.
+
+\begin{table}[]
+\centering
+\caption{Uncompressed header syntax}
+\label{header_syntax}
+\begin{tabular}{|l|l|}
+\hline
+... &  \\ \hline
+loop\_filter\_params( ) &  \\ \hline
+\textcolor{red}{cdef\_params()} &  \\ \hline
+quantization\_params( ) &  \\ \hline
+... &  \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{CDEF params syntax}
+\label{params_syntax}
+\begin{tabular}{|l|l|}
+\hline
+\textcolor{red}{cdef\_params()} \{ &  \\ \hline
+\enspace \textcolor{red}{primary\_damping} & \textcolor{red}{f(2)} \\ \hline
+\enspace \textcolor{red}{secondary\_damping} & \textcolor{red}{f(2)} \\ \hline
+\enspace \textcolor{red}{cdef\_bits} & \textcolor{red}{f(2)} \\ \hline
+\enspace \textcolor{red}{for (cdef\_id = 0; cdef\_id < 1 <{<} cdef\_bits; cdef\_id++) \{} &  \\ \hline
+\quad \textcolor{red}{cdef\_luma\_primary\_strength[cdef\_id]} & \textcolor{red}{f(4)} \\ \hline
+\quad \textcolor{red}{cdef\_luma\_skip\_condition[cdef\_id]} & \textcolor{red}{f(1)} \\ \hline
+\quad \textcolor{red}{cdef\_luma\_secondary\_strength[cdef\_id]} & \textcolor{red}{f(2)} \\ \hline
+\quad \textcolor{red}{cdef\_chroma\_primary\_strength[cdef\_id]} & \textcolor{red}{f(4)} \\ \hline
+\quad \textcolor{red}{cdef\_chroma\_skip\_condition[cdef\_id]} & \textcolor{red}{f(1)} \\ \hline
+\quad \textcolor{red}{cdef\_chroma\_secondary\_strength[cdef\_id]} & \textcolor{red}{f(2)} \\ \hline
+\enspace \textcolor{red}{\}} & \\ \hline
+\textcolor{red}{\}} &  \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{Decode partition syntax}
+\label{partition_syntax}
+\begin{tabular}{|l|l|}
+\hline
+... &  \\ \hline
+if (bsize == BLOCK\_8X8 || partition != PARTITION\_SPLIT) \{ &  \\ \hline
+\enspace for (i = 0; i < num8x8; i++) \{ &  \\ \hline
+\quad AbovePartitionContext[c + i] = 15 >{>} b\_width\_log2\_lookup[subsize] &  \\ \hline
+\quad LeftPartitionContext[r + i] = 15 >{>} b\_height\_log2\_lookup[subsize] &  \\ \hline
+\enspace \} &  \\ \hline
+\} &  \\ \hline
+\textcolor{red}{if (bsize == BLOCK\_64X64) \{} & \\ \hline
+\enspace \textcolor{red}{if (!sb\_all\_skip(MiCol, MiRow, 64 / MI\_SIZE)) \{} & \\ \hline
+\quad \textcolor{red}{cdef\_id } & \textcolor{red}{f(cdef\_bits)} \\ \hline
+\enspace \textcolor{red}{\}} & \\ \hline
+\textcolor{red}{\}} & \\ \hline
+... &  \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Superblock Decode Process}
+
+For each 8x8 block within a superblock, the following steps are applied.
 
 \subsection{Direction Search}
 
 The direction search evaluates equation (\ref{eq:direction-variance3})
 for each of the 8 directions, with the $\frac{1}{N_{d,k}}$ factor
-being replaced by a 10-bit multiply. The step-by-step process is described
-in algorithm~\ref{cap:direction-search}.
+being replaced by a 10-bit multiply. The step-by-step process is
+described in algorithm~\ref{cap:direction-search}.  The search is only
+done for the luma component, and the direction found in this search
+will be used for all components.
 
-In total, the search for all
-8 directions requires the following arithmetic operations:
+In total, the search for all 8 directions requires the following
+arithmetic operations:
 \begin{enumerate}
 \item The pixel accumulations in equation (\ref{eq:direction-variance3})
 are 418 adds of 8-bit signed values, with results that fit in 11 bits.
-There's a maximum of 8 values contributing to each sums. (there are
+There's a maximum of 8 values contributing to each sums (there are
 simplifications that can save 128 adds using intermediate sums).
 \item The result of 1) is 90 11-bit partial sums. Each is squared (so 90
 11-bit multiplies), with the result being 21-bit unsigned values.
@@ -471,71 +626,55 @@ the $840/\textrm{count}[d][L]$ term does not need to be computed, since it
 only depends on $d$ and $L$\label{cap:direction-search}.}
 \end{algorithm}
 
+\subsection{Strength Computation}
 
-\subsection{Threshold Computation}
+The signaled primary strength $S'$ is adjusted for luma using an
+approximation of the variance $v$ for the 8x8 block as follows:
+\begin{equation}
+{S'}_{adj}=\left\{ \begin{array}{ll}
+\lfloor\frac{S' (4 + \min(\lfloor log_2\lfloor\frac{v}{2^{16}}\rfloor \rfloor, 12)) + 8}{16}\rfloor &, v >= 2^{16}\\
+0 &, otherwise
+\end{array}\right. \label{eq:strength-adjustment}
+\end{equation}
 
-The threshold to use for the block is obtained by approximating equation
-(\ref{eq:threshold-pow}) using a lookup table.
-
-\subsection{Directional Filter}
-
-For luma, we use a 7-tap filter along the direction found in the direction
-search. For each pixel $X$, the new value $X'$ is computed as
-\begin{align*}
-X'=X+[ & f\left(A-X,T\right)+2f\left(B-X,T\right)+\\
- & 3f\left(C-X,T\right)+3f\left(D-X,T\right)+\\
- & 2f\left(E-X,T\right)+f\left(F-X,T\right)]/16
-\end{align*}
-where $f\left(d,T\right)$ is defined in equation (\ref{eq:threshold-function})
-and the direction-dependent position of the taps is shown in Fig.~(\ref{fig:Position-of-taps}). 
-
-\begin{figure}
-\centering{\includegraphics[scale=0.5]{taps0}\hspace{1.5em}\includegraphics[scale=0.5]{taps1}\hspace{1.5em}\includegraphics[scale=0.5]{taps2}\hspace{1.5em}\includegraphics[scale=0.5]{taps3}}
-
-\vspace{2em}
-
-\centering{\includegraphics[scale=0.5]{taps4}\hspace{1.5em}\includegraphics[scale=0.5]{taps5}\hspace{1.5em}\includegraphics[scale=0.5]{taps6}\hspace{1.5em}\includegraphics[scale=0.5]{taps7}}
-
-\caption{Position of the directional deringing taps for directions 0 to 7.\label{fig:Position-of-taps}}
-\end{figure}
-
+This adjustment is not applied for chroma, nor for the secondary strength $S''$.
 
 \section{Results}
 
-The deringing filter described here has been implemented in the AV1
-codec and can be enabled by configuring the build with the \texttt{-{}-enable-experimental}
-and \texttt{-{}-enable-cdef} options.
-
-We tested the deringing filter using the Are We Compressed Yet?~\cite{AWCY}
-online testing tool. The results for still images are shown in Table.~\ref{tab:bd-rate}
-for the objective-1-fast test set.
+We tested the deringing filter using the Are We Compressed
+Yet~\cite{AWCY} online testing tool. The results are shown in
+table~\ref{tab:bd-rate} for the objective-1-fast test set.  These
+results reflect the gains in the codebase for git SHA \texttt{36bad47}
+(17th May 2017).
 
 \begin{table}
-\caption{Deringing filter Bjøntegaard-delta~\cite{Testing-draft} rate for
+\caption{Deringing filter Bj{\o}ntegaard-delta~\cite{Testing-draft} rate for
 still images (lower is better) in Daala.\label{tab:bd-rate}}
 \centering{%
 \begin{tabular}{cccccc}
 \hline 
 Bitrate (bpp) & PSNR & CIEDE 2000 & PSNR-HVS & SSIM & MS-SSIM\tabularnewline
 \hline 
-High-latency & -2.09\% & -1.97\% & -0.74\% & -1.69\% & -0.94\%\tabularnewline
-Low-latency & -3.94\% & -3.68\% & -2.38\% & -3.37\% & -2.52\%\tabularnewline
-Low-latency, cpu-used=4 & -7.63\% & -7.23\% & -5.20\% & -7.67\% & -5.73\%\tabularnewline
+High-latency & -1.32\% & -1.87\% & -0.32\% & -1.33\% & -0.66\%\tabularnewline
+Low-latency & -2.71\% & -2.93\% & -1.54\% & -2.67\% & -1.92\%\tabularnewline
+Low-latency, cpu-used=4 & -3.77\% & -3.80\% & -2.33\% & -3.88\% & -2.94\%\tabularnewline
 \hline 
 \end{tabular}}
 
 \end{table}
 
+CDEF competes for the same gains as some other coding tools, in
+particular the dual\_filter tool.  In medium to low complexity
+configurations CDEF may give a better compexity/compression trade-off.
 
 \section{Conclusion}
 
-We have demonstrated an effective algorithm for removing ringing artifacts
-from coded images and videos. The proposed CDEF algorithm is based
-on the conditional replacement filter (CRF) and a constrained low-pass
-filter (CLPF) and takes into account the direction of the patterns
-it is filtering to reduce the risk of blurring. Objective results
-show a bit-rate reduction up to 7.7\% on video sequences. 
-
+We have demonstrated an effective algorithm for removing coding
+artifacts from coded images and videos. The proposed CDEF algorithm is
+based on a primary directional filter and a secondary cross filter.
+By taking into account the direction of the patterns, the risk of
+blurring is reduced. Objective results show a bit-rate reductions up to
+20\% depending on the encoder configuration and video content.
 
 \bibliographystyle{IEEEtran}
 \bibliography{daala}
