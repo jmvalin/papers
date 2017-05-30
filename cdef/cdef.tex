@@ -168,7 +168,7 @@ shown are never computed in practice (only $s_{d}$ is). \label{fig:Example-of-di
 \section{Non-linear Low-pass Filter}
 
 \subsection{Detailed description}
-
+\label{sec:nonlinear-lowpass}
 The non-linear low-pass is designed to remove coding artifacts without
 blurring sharp edges.  This is achieved by selecting taps based on the
 identified direction and selecting filter strengths along and across
@@ -566,7 +566,7 @@ For each 8x8 block within a superblock, the following steps are applied.
 
 The direction search evaluates equation (\ref{eq:direction-variance3})
 for each of the 8 directions, with the $\frac{1}{N_{d,k}}$ factor
-being replaced by a 10-bit multiply. The step-by-step process is
+being replaced by an exact 10-bit multiply by $\frac{840}{N_{d,k}}$. The step-by-step process is
 described in algorithm~\ref{cap:direction-search}.  The search is only
 done for the luma component, and the direction found in this search
 will be used for all components.
@@ -638,6 +638,25 @@ approximation of the variance $v$ for the 8x8 block as follows:
 \end{equation}
 
 This adjustment is not applied for chroma, nor for the secondary strength $S''$.
+
+\subsection{Directional Filtering}
+
+For each 8x8 block to be filtered, a directional filtering pass is first applied, using
+strength ${S'}_{adj}$ for luma or ${S'}$ for chroma, and damping $D'$. When filtering
+pixel $(i,j)$, the directional filter may use pixels that are outside of the 8x8 block,
+or even outside of the superblock. If the input pixel lies outside of the frame, then the
+pixel is ignored, i.e. $f(d,S,D)=0$. The weights for each direction $d$ are described
+in Section~\ref{sec:nonlinear-lowpass}. 
+
+\subsection{Cross Filtering}
+
+Once the directional filter has been applied, a second, cross-shaped filter is applied
+to the result. The shape of the filter and its weights are shown in
+Section~\ref{sec:nonlinear-lowpass}. Unlike the directional filter, only two different
+shares are used. Like the directional filter, the cross filter may use input pixels
+outside of the 8x8 block being filtered. However, when the input pixel is outside of the
+superblock being filtered, then pixel values \textit{before} directional filtering are used.
+For pixels outside the frame, $f(d,S,D)=0$ is used just like in the directional filter.
 
 \section{Results}
 
